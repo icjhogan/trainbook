@@ -248,8 +248,8 @@ export default function UploadPage() {
           onClick={() => cameraRef.current?.click()}
           className="w-full aspect-[4/3] max-w-[320px] rounded-[20px] glass flex flex-col items-center justify-center gap-4 active:scale-[0.97] transition-all"
         >
-          <div className="w-14 h-14 rounded-full bg-[var(--color-text)] flex items-center justify-center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <div className="w-16 h-16 rounded-full bg-white/10 border border-white/15 flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-text)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14.5 4h-5L7.5 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.5L14.5 4z" />
               <circle cx="12" cy="13" r="3" />
             </svg>
