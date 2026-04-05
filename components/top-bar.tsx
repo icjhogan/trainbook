@@ -2,12 +2,14 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useSearch } from "@/lib/search-context";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
 export function TopBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { isSearching } = useSearch();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -32,7 +34,7 @@ export function TopBar() {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-30 pointer-events-none">
+    <div className={`fixed top-0 left-0 right-0 z-30 pointer-events-none transition-opacity duration-200 ${isSearching ? "opacity-0 pointer-events-none" : ""}`}>
       <div className="h-[env(safe-area-inset-top)]" />
       <div className="flex items-center justify-between h-[56px] px-5 pt-2 max-w-[430px] mx-auto">
         {/* Left — back button on sub-pages only */}
