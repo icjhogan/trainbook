@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Workout } from "@/lib/types";
+import { WorkoutPill } from "./workout-pill";
 
 interface WorkoutCardProps {
   workout: Workout;
@@ -31,14 +32,12 @@ export function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
         )}
       </div>
 
-      <p className="text-caption text-[var(--color-secondary)] mt-0.5">
-        {workout.workout_type}
-        {workout.event_focus?.length > 0 && (
-          <span className="text-[var(--color-muted)]">
-            {" "}&middot; {workout.event_focus.join(", ")}
-          </span>
-        )}
-      </p>
+      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+        <WorkoutPill label={workout.workout_type} kind="type" />
+        {workout.event_focus?.map((e) => (
+          <WorkoutPill key={e} label={e} kind="event" />
+        ))}
+      </div>
 
       {/* Collapsed preview */}
       {!expanded && (

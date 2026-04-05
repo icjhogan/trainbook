@@ -5,6 +5,7 @@ import { WorkoutCard } from "@/components/workout-card";
 import { WorkoutRow } from "@/components/workout-row";
 import { Toast } from "@/components/toast";
 import { useSearch } from "@/lib/search-context";
+import { getTypeColor, getEventColor } from "@/lib/workout-colors";
 import type { Workout } from "@/lib/types";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 
@@ -140,20 +141,30 @@ export function FeedClient({
         </div>
 
         {/* Quick filters */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-5 px-5">
-          {["Tempo", "Practice", "Meet", "High Jump", "Hurdles", "Long Jump", "Lift"].map((tag) => {
-            const isActive = query.toLowerCase() === tag.toLowerCase();
+        <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1 -mx-5 px-5">
+          {[
+            { label: "Tempo", kind: "type" as const },
+            { label: "Practice", kind: "type" as const },
+            { label: "Meet", kind: "type" as const },
+            { label: "High Jump", kind: "event" as const },
+            { label: "Hurdles", kind: "event" as const },
+            { label: "Long Jump", kind: "event" as const },
+            { label: "Lift", kind: "type" as const },
+          ].map(({ label, kind }) => {
+            const isActive = query.toLowerCase() === label.toLowerCase();
+            const color = kind === "type" ? getTypeColor(label) : getEventColor(label);
             return (
               <button
-                key={tag}
-                onClick={() => setQuery(isActive ? "" : tag)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all active:scale-95 ${
+                key={label}
+                onClick={() => setQuery(isActive ? "" : label)}
+                className="flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all active:scale-95"
+                style={
                   isActive
-                    ? "bg-[var(--color-text)] text-white"
-                    : "bg-[var(--color-surface)] text-[var(--color-secondary)]"
-                }`}
+                    ? { backgroundColor: color.text, color: "#fff" }
+                    : { backgroundColor: color.bg, color: color.text }
+                }
               >
-                {tag}
+                {label}
               </button>
             );
           })}
