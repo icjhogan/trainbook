@@ -104,7 +104,7 @@ export function FeedClient({
   // Search mode
   if (isSearching) {
     return (
-      <div className="px-5 pt-[60px] pb-8 animate-fade-in">
+      <div className="px-5 pt-4 pb-8 animate-fade-in">
         {/* Search input */}
         <div className="relative mb-4">
           <svg
@@ -204,9 +204,7 @@ export function FeedClient({
 
   // Normal feed mode
   return (
-    <div className="px-5 pt-[60px] pb-8 animate-fade-in-up">
-      <h1 className="text-title">entries</h1>
-
+    <div className="px-5 pt-4 pb-8 animate-fade-in-up">
       {workouts.length === 0 ? (
         <div className="mt-24 text-center">
           <p className="text-heading text-[var(--color-secondary)] mb-2">

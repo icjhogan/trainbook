@@ -1,6 +1,7 @@
 "use client";
 
 import { BottomNav } from "@/components/bottom-nav";
+import { TopBar } from "@/components/top-bar";
 import { ChatPanel } from "@/components/chat-panel";
 import { SearchProvider, useSearch } from "@/lib/search-context";
 import { useState } from "react";
@@ -20,7 +21,8 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-[var(--color-bg)]">
-      <main className="pb-[calc(68px+env(safe-area-inset-bottom))]">
+      <TopBar />
+      <main className="pt-[calc(44px+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]">
         {children}
       </main>
       <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />

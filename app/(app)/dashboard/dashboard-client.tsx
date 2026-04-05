@@ -75,8 +75,7 @@ export function DashboardClient({ workouts }: { workouts: Workout[] }) {
 
   if (workouts.length === 0) {
     return (
-      <div className="px-5 pt-[60px] animate-fade-in-up">
-        <h1 className="text-title">dashboard</h1>
+      <div className="px-5 pt-4 animate-fade-in-up">
         <div className="mt-24 text-center">
           <p className="text-body text-[var(--color-muted)]">
             add some entries to see your training data here
@@ -87,9 +86,7 @@ export function DashboardClient({ workouts }: { workouts: Workout[] }) {
   }
 
   return (
-    <div className="px-5 pt-[60px] pb-8 animate-fade-in-up">
-      <h1 className="text-title mb-2">dashboard</h1>
-
+    <div className="px-5 pt-4 pb-8 animate-fade-in-up">
       <p className="text-body text-[var(--color-secondary)] mb-10">
         {weeks.size} weeks &middot; {totalSessions} sessions &middot;{" "}
         {(totalVolume / 1000).toFixed(1)}km
