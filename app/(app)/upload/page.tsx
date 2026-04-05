@@ -191,15 +191,8 @@ export default function UploadPage() {
 
   // Capture state
   return (
-    <div className="px-5 pt-[60px] animate-fade-in-up">
-      <h1 className="text-title mb-10">Add entry</h1>
-
-      {error && (
-        <div className="mb-6 px-4 py-3 bg-red-50 rounded-[var(--radius-sm)] animate-fade-in">
-          <p className="text-caption text-[var(--color-danger)]">{error}</p>
-        </div>
-      )}
-
+    <div className="flex flex-col min-h-[calc(100dvh-80px)] animate-fade-in-up">
+      {/* Hidden inputs */}
       <input
         ref={cameraRef}
         type="file"
@@ -216,16 +209,46 @@ export default function UploadPage() {
         className="hidden"
       />
 
-      <div className="space-y-3">
+      {/* Main capture area */}
+      <div className="flex-1 flex flex-col items-center justify-center px-8">
+        {error && (
+          <div className="mb-8 px-4 py-3 bg-red-50 rounded-[var(--radius-sm)] animate-fade-in w-full">
+            <p className="text-caption text-[var(--color-danger)]">{error}</p>
+          </div>
+        )}
+
+        {/* Camera target area */}
         <button
           onClick={() => cameraRef.current?.click()}
-          className="w-full py-4 text-[15px] font-medium text-center bg-[var(--color-text)] text-white rounded-[var(--radius)] min-h-[50px] active:scale-[0.98]"
+          className="w-full aspect-[4/3] max-w-[320px] rounded-[20px] border-2 border-dashed border-[var(--color-border)] flex flex-col items-center justify-center gap-4 active:scale-[0.97] active:border-[var(--color-secondary)] transition-all"
         >
-          Take a photo
+          <div className="w-14 h-14 rounded-full bg-[var(--color-text)] flex items-center justify-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14.5 4h-5L7.5 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.5L14.5 4z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+          </div>
+          <div className="text-center">
+            <p className="text-subheading text-[var(--color-text)]">
+              Snap your notebook
+            </p>
+            <p className="text-caption text-[var(--color-muted)] mt-1">
+              Take a photo of your workout page
+            </p>
+          </div>
         </button>
+
+        {/* Divider */}
+        <div className="flex items-center gap-4 w-full max-w-[320px] my-6">
+          <div className="flex-1 h-px bg-[var(--color-border)]" />
+          <span className="text-caption text-[var(--color-muted)]">or</span>
+          <div className="flex-1 h-px bg-[var(--color-border)]" />
+        </div>
+
+        {/* File picker */}
         <button
           onClick={() => fileRef.current?.click()}
-          className="w-full py-4 text-[15px] text-center text-[var(--color-secondary)] rounded-[var(--radius)] min-h-[50px] active:bg-[var(--color-surface)]"
+          className="w-full max-w-[320px] py-3.5 text-[15px] text-center text-[var(--color-secondary)] bg-[var(--color-surface)] rounded-[var(--radius)] min-h-[48px] active:bg-[var(--color-border)] transition-colors"
         >
           Choose from library
         </button>
