@@ -4,14 +4,14 @@
 const TYPE_COLORS: Record<string, [string, string]> = {
   "Tempo":            ["#3d2e0a", "#f0c340"],  // amber
   "Extensive Tempo":  ["#3d2e0a", "#f0c340"],
-  "Intensive Tempo":  ["#3b1414", "#f87171"],  // red
+  "Intensive Tempo":  ["#3b2014", "#f4a261"],  // warm coral
   "Practice":         ["#1e1b4b", "#a5b4fc"],  // indigo
   "Meet":             ["#0a2e1f", "#6ee7b7"],  // emerald
   "Lift":             ["#2e1065", "#c4b5fd"],  // purple
   "Off/Recovery":     ["#27272a", "#a1a1aa"],  // zinc
-  "Reflection":       ["#3b0a2a", "#f9a8d4"],  // pink
-  "Goals":            ["#3b0a2a", "#f9a8d4"],
-  "Speed":            ["#3b1414", "#f87171"],
+  "Reflection":       ["#2a1a2e", "#d8b4fe"],  // soft violet
+  "Goals":            ["#2a1a2e", "#d8b4fe"],
+  "Speed":            ["#3b2014", "#f4a261"],  // warm coral
   "Hurdles":          ["#3b1a0a", "#fdba74"],  // orange
   "Travel":           ["#27272a", "#a1a1aa"],
   "Weekly Plan":      ["#27272a", "#a1a1aa"],
@@ -25,10 +25,10 @@ const EVENT_COLORS: Record<string, [string, string]> = {
   "Hurdles":          ["#3b1a0a", "#fdba74"],  // orange
   "Shot Put":         ["#2e1065", "#c4b5fd"],  // purple
   "Javelin":          ["#3d2e0a", "#fde047"],  // yellow
-  "Sprints":          ["#3b1414", "#f87171"],  // red
-  "200m":             ["#3b1414", "#f87171"],
+  "Sprints":          ["#1a2e3b", "#7dd3fc"],  // sky blue
+  "200m":             ["#1a2e3b", "#7dd3fc"],  // sky blue
   "800m":             ["#1e1b4b", "#a5b4fc"],  // indigo
-  "Speed Endurance":  ["#3b1414", "#f87171"],
+  "Speed Endurance":  ["#1a2e3b", "#7dd3fc"],  // sky blue
   "Tempo":            ["#3d2e0a", "#f0c340"],  // amber
   "Strength":         ["#2e1065", "#c4b5fd"],
   "Heptathlon":       ["#0a2e1f", "#6ee7b7"],
