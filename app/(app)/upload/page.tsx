@@ -271,13 +271,34 @@ export default function UploadPage() {
           <div className="flex-1 h-px bg-[var(--color-border)]" />
         </div>
 
-        {/* File picker */}
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="w-full max-w-[320px] py-3.5 text-[15px] text-center text-[var(--color-secondary)] glass-button rounded-[var(--radius)] min-h-[48px] active:scale-[0.98] transition-all"
-        >
-          Choose from library
-        </button>
+        {/* Secondary options */}
+        <div className="w-full max-w-[320px] space-y-2">
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="w-full py-3 text-[14px] text-center text-[var(--color-secondary)] glass-button rounded-[var(--radius)] min-h-[44px] active:scale-[0.98] transition-all"
+          >
+            Choose from library
+          </button>
+          <button
+            onClick={() => {
+              setWorkouts([{
+                date: new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
+                date_iso: new Date().toISOString().slice(0, 10),
+                workout_type: "Practice",
+                event_focus: [],
+                exercises: [{ description: "", distance: null, reps: null, sets: null, times: [], rest: null, notes: null }],
+                technical_cues: [],
+                personal_notes: null,
+                raw_text: "",
+                flags: [],
+              }]);
+              setState("confirm");
+            }}
+            className="w-full py-3 text-[14px] text-center text-[var(--color-muted)] min-h-[44px] active:opacity-50 transition-opacity"
+          >
+            Write it manually
+          </button>
+        </div>
       </div>
 
       <Toast message={toast} visible={!!toast} onDone={() => setToast("")} />
