@@ -2,18 +2,37 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { uploadWorkoutImage } from "@/lib/supabase/storage";
+import { WorkoutForm } from "@/components/workout-form";
+import { Toast } from "@/components/toast";
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import type { Exercise } from "@/lib/types";
+
+interface ExtractedWorkout {
+  date: string;
+  date_iso: string;
+  workout_type: string;
+  event_focus: string[];
+  exercises: Exercise[];
+  technical_cues: string[];
+  personal_notes: string | null;
+  raw_text: string;
+  flags: string[];
+}
 
 type UploadState = "capture" | "uploading" | "extracting" | "confirm";
 
 export default function UploadPage() {
   const [state, setState] = useState<UploadState>("capture");
-  const [imagePreview, setImagePreview] = useState<string>("");
-  const [imagePath, setImagePath] = useState<string>("");
-  const [extractedData, setExtractedData] = useState<any[]>([]);
+  const [imagePreview, setImagePreview] = useState("");
+  const [imagePath, setImagePath] = useState("");
+  const [workouts, setWorkouts] = useState<ExtractedWorkout[]>([]);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
   const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
   const supabase = createClient();
 
   async function handleFile(file: File) {
@@ -40,12 +59,49 @@ export default function UploadPage() {
         throw new Error(body.error || "Extraction failed");
       }
 
-      const { workouts } = await res.json();
-      setExtractedData(workouts);
+      const { workouts: extracted } = await res.json();
+      setWorkouts(extracted);
       setState("confirm");
     } catch (err: any) {
       setError(err.message || "Something went wrong");
       setState("capture");
+    }
+  }
+
+  async function handleSave(index: number) {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const workout = workouts[index];
+      const { error } = await supabase.from("workouts").insert({
+        user_id: user.id,
+        date: workout.date,
+        date_iso: workout.date_iso || null,
+        workout_type: workout.workout_type,
+        event_focus: workout.event_focus,
+        exercises: workout.exercises,
+        technical_cues: workout.technical_cues,
+        personal_notes: workout.personal_notes,
+        raw_text: workout.raw_text,
+        flags: workout.flags,
+        image_path: imagePath,
+      });
+
+      if (error) throw error;
+
+      const remaining = workouts.filter((_, i) => i !== index);
+      setWorkouts(remaining);
+      setToast("workout saved");
+
+      if (remaining.length === 0) {
+        setTimeout(() => router.push("/feed"), 1500);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -73,14 +129,30 @@ export default function UploadPage() {
 
   if (state === "confirm") {
     return (
-      <div className="px-5 pt-14">
-        <h1 className="text-xl font-semibold tracking-tight mb-4">confirm</h1>
-        <p className="text-sm text-[var(--color-muted)]">
-          {extractedData.length} workout(s) extracted. Form coming in Task 6.
-        </p>
-        <pre className="text-xs mt-4 overflow-auto max-h-[60dvh] text-[var(--color-muted)]">
-          {JSON.stringify(extractedData, null, 2)}
-        </pre>
+      <div className="px-5 pt-14 pb-8">
+        <h1 className="text-xl font-semibold tracking-tight mb-6">
+          {workouts.length === 1
+            ? "confirm entry"
+            : `confirm ${workouts.length} entries`}
+        </h1>
+
+        {workouts.map((w, i) => (
+          <div key={i} className={i > 0 ? "mt-10 pt-10 border-t border-[var(--color-border)]" : ""}>
+            <WorkoutForm
+              workout={w}
+              imagePreview={imagePreview}
+              onChange={(updated) => {
+                const next = [...workouts];
+                next[i] = updated;
+                setWorkouts(next);
+              }}
+              onSave={() => handleSave(i)}
+              saving={saving}
+            />
+          </div>
+        ))}
+
+        <Toast message={toast} visible={!!toast} onDone={() => setToast("")} />
       </div>
     );
   }
@@ -121,6 +193,8 @@ export default function UploadPage() {
           choose from library
         </button>
       </div>
+
+      <Toast message={toast} visible={!!toast} onDone={() => setToast("")} />
     </div>
   );
 }
