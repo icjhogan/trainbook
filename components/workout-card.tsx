@@ -1,21 +1,88 @@
 "use client";
 
 import { useState } from "react";
-import type { Workout } from "@/lib/types";
+import type { Workout, Exercise } from "@/lib/types";
 import { WorkoutPill } from "./workout-pill";
+import { WorkoutForm } from "./workout-form";
+import { createClient } from "@/lib/supabase/client";
 
 interface WorkoutCardProps {
   workout: Workout;
   onDelete: (id: string) => void;
+  onUpdate: (updated: Workout) => void;
 }
 
-export function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
+export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    date: workout.date,
+    date_iso: workout.date_iso,
+    workout_type: workout.workout_type,
+    event_focus: workout.event_focus || [],
+    exercises: workout.exercises || [],
+    technical_cues: workout.technical_cues || [],
+    personal_notes: workout.personal_notes,
+    raw_text: workout.raw_text || "",
+    flags: workout.flags || [],
+  });
 
-  const exercisePreview = workout.exercises.slice(0, 2);
-  const hasMore = workout.exercises.length > 2;
+  const supabase = createClient();
+
+  const exercisePreview = workout.exercises?.slice(0, 2) || [];
+  const hasMore = (workout.exercises?.length || 0) > 2;
   const hasFlags = workout.flags?.length > 0;
+
+  async function handleSave() {
+    setSaving(true);
+    const { error } = await supabase
+      .from("workouts")
+      .update({
+        date: editData.date,
+        date_iso: editData.date_iso || null,
+        workout_type: editData.workout_type,
+        event_focus: editData.event_focus,
+        exercises: editData.exercises,
+        technical_cues: editData.technical_cues,
+        personal_notes: editData.personal_notes,
+        raw_text: editData.raw_text,
+        flags: editData.flags,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", workout.id);
+
+    setSaving(false);
+
+    if (!error) {
+      onUpdate({ ...workout, ...editData });
+      setEditing(false);
+    }
+  }
+
+  // Edit mode — show the workout form
+  if (editing) {
+    return (
+      <div className="py-4 -mx-5 px-5 animate-fade-in">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-label">editing</p>
+          <button
+            onClick={() => setEditing(false)}
+            className="text-caption text-[var(--color-secondary)] min-h-[44px] flex items-center active:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+        <WorkoutForm
+          workout={editData}
+          onChange={setEditData}
+          onSave={handleSave}
+          saving={saving}
+        />
+      </div>
+    );
+  }
 
   return (
     <article
@@ -56,7 +123,7 @@ export function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
           </div>
           {hasMore && (
             <p className="text-caption text-[var(--color-muted)] mt-1">
-              +{workout.exercises.length - 2} more
+              +{(workout.exercises?.length || 0) - 2} more
             </p>
           )}
 
@@ -73,7 +140,7 @@ export function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
         <div className="mt-4 space-y-5 animate-fade-in">
           {/* Exercises */}
           <div className="space-y-3">
-            {workout.exercises.map((ex, i) => (
+            {workout.exercises?.map((ex, i) => (
               <div
                 key={i}
                 className="pl-3 border-l-[2px] border-[var(--color-border)]"
@@ -135,36 +202,48 @@ export function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
             </div>
           )}
 
-          {/* Delete */}
-          {!confirmDelete ? (
+          {/* Actions */}
+          <div className="flex items-center gap-4">
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setConfirmDelete(true);
+                setEditing(true);
               }}
-              className="text-caption text-[var(--color-muted)] min-h-[44px] flex items-center"
+              className="text-caption text-[var(--color-secondary)] font-medium min-h-[44px] flex items-center active:opacity-50"
             >
-              delete entry
+              edit
             </button>
-          ) : (
-            <div
-              className="flex items-center gap-4 animate-fade-in"
-              onClick={(e) => e.stopPropagation()}
-            >
+
+            {!confirmDelete ? (
               <button
-                onClick={() => onDelete(workout.id)}
-                className="text-caption text-[var(--color-danger)] font-medium min-h-[44px] flex items-center"
-              >
-                confirm delete
-              </button>
-              <button
-                onClick={() => setConfirmDelete(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmDelete(true);
+                }}
                 className="text-caption text-[var(--color-muted)] min-h-[44px] flex items-center"
               >
-                cancel
+                delete
               </button>
-            </div>
-          )}
+            ) : (
+              <div
+                className="flex items-center gap-4 animate-fade-in"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => onDelete(workout.id)}
+                  className="text-caption text-[var(--color-danger)] font-medium min-h-[44px] flex items-center"
+                >
+                  confirm
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-caption text-[var(--color-muted)] min-h-[44px] flex items-center"
+                >
+                  cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </article>

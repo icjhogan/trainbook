@@ -94,6 +94,16 @@ export function FeedClient({
     [supabase]
   );
 
+  const handleUpdate = useCallback(
+    (updated: Workout) => {
+      setWorkouts((prev) =>
+        prev.map((w) => (w.id === updated.id ? updated : w))
+      );
+      setToast("entry updated");
+    },
+    []
+  );
+
   const filteredWorkouts = useMemo(
     () => (isSearching ? searchWorkouts(workouts, query) : workouts),
     [workouts, isSearching, query]
@@ -229,6 +239,7 @@ export function FeedClient({
                     key={w.id}
                     workout={w}
                     onDelete={handleDelete}
+                    onUpdate={handleUpdate}
                   />
                 ))}
               </div>
