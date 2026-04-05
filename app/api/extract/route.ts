@@ -2,8 +2,35 @@ import { createClient } from "@/lib/supabase/server";
 import { EXTRACTION_PROMPT } from "@/lib/extraction-prompt";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 
 const anthropic = new Anthropic();
+
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4MB (under Claude's 5MB limit)
+const MAX_DIMENSION = 2048;
+
+async function resizeIfNeeded(buffer: ArrayBuffer): Promise<Buffer> {
+  let img = sharp(Buffer.from(buffer));
+  const metadata = await img.metadata();
+
+  // Resize if dimensions are too large
+  const w = metadata.width || 0;
+  const h = metadata.height || 0;
+  if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
+    img = img.resize(MAX_DIMENSION, MAX_DIMENSION, { fit: "inside" });
+  }
+
+  // Convert to JPEG and compress until under limit
+  let quality = 85;
+  let result = await img.jpeg({ quality }).toBuffer();
+
+  while (result.length > MAX_IMAGE_BYTES && quality > 30) {
+    quality -= 15;
+    result = await img.jpeg({ quality }).toBuffer();
+  }
+
+  return result;
+}
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -15,7 +42,6 @@ export async function POST(request: NextRequest) {
 
   const { imagePath } = await request.json();
 
-  // Get a signed URL for the image
   const { data: signedUrlData, error: urlError } = await supabase.storage
     .from("workout-images")
     .createSignedUrl(imagePath, 3600);
@@ -27,11 +53,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Fetch image and convert to base64
   const imageResponse = await fetch(signedUrlData.signedUrl);
   const imageBuffer = await imageResponse.arrayBuffer();
-  const base64 = Buffer.from(imageBuffer).toString("base64");
-  const mediaType = imageResponse.headers.get("content-type") || "image/jpeg";
+
+  // Resize/compress to stay under Claude's 5MB limit
+  const processedImage = await resizeIfNeeded(imageBuffer);
+  const base64 = processedImage.toString("base64");
 
   try {
     const response = await anthropic.messages.create({
@@ -45,11 +72,7 @@ export async function POST(request: NextRequest) {
               type: "image",
               source: {
                 type: "base64",
-                media_type: mediaType as
-                  | "image/jpeg"
-                  | "image/png"
-                  | "image/gif"
-                  | "image/webp",
+                media_type: "image/jpeg",
                 data: base64,
               },
             },
