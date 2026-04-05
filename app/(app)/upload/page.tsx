@@ -170,9 +170,35 @@ export default function UploadPage() {
             key={i}
             className={i > 0 ? "mt-10 pt-10 border-t border-[var(--color-separator)]" : ""}
           >
+            {/* Entry header with count and dismiss */}
+            {workouts.length > 1 && (
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-caption text-[var(--color-muted)]">
+                  Entry {i + 1} of {workouts.length}
+                </p>
+                <button
+                  onClick={() => {
+                    const remaining = workouts.filter((_, idx) => idx !== i);
+                    setWorkouts(remaining);
+                    setToast("entry dropped");
+                    if (remaining.length === 0) {
+                      setTimeout(() => router.push("/feed"), 800);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 min-h-[36px] px-2 rounded-full active:bg-[var(--color-surface)] transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="2" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  <span className="text-[12px] text-[var(--color-muted)]">Skip</span>
+                </button>
+              </div>
+            )}
+
             <WorkoutForm
               workout={w}
-              imagePreview={imagePreview}
+              imagePreview={i === 0 ? imagePreview : undefined}
               onChange={(updated) => {
                 const next = [...workouts];
                 next[i] = updated;
