@@ -5,8 +5,12 @@ import { DefaultChatTransport } from "ai";
 import { ChatMessage } from "./chat-message";
 import { useRef, useEffect, useState } from "react";
 
-export function ChatPanel() {
-  const [open, setOpen] = useState(false);
+interface ChatPanelProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export function ChatPanel({ open, onClose }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState("");
@@ -47,37 +51,25 @@ export function ChatPanel() {
     setInput("");
   }
 
+  if (!open) return null;
+
   return (
-    <>
-      {/* Trigger */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-5 z-30 w-[38px] h-[38px] rounded-full bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] flex items-center justify-center shadow-sm active:scale-90 transition-transform"
-        aria-label="Open chat"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 3a9 9 0 0 1 9 9 9 9 0 0 1-9 9 9.005 9.005 0 0 1-7.2-3.6L3 21l2.4-4.8A9 9 0 0 1 12 3z" />
-        </svg>
-      </button>
+    <div className="fixed inset-0 z-50 bg-[var(--color-bg)] flex flex-col animate-slide-up">
+      {/* Handle bar */}
+      <div className="flex justify-center pt-2 pb-1">
+        <div className="w-9 h-1 rounded-full bg-[var(--color-border)]" />
+      </div>
 
-      {/* Full-screen sheet */}
-      {open && (
-        <div className="fixed inset-0 z-50 bg-[var(--color-bg)] flex flex-col animate-slide-up">
-          {/* Handle bar */}
-          <div className="flex justify-center pt-2 pb-1">
-            <div className="w-9 h-1 rounded-full bg-[var(--color-border)]" />
-          </div>
-
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 h-11">
-            <span className="text-subheading">chat</span>
-            <button
-              onClick={() => setOpen(false)}
-              className="text-[15px] text-[var(--color-accent)] font-medium min-w-[44px] min-h-[44px] flex items-center justify-end active:opacity-50"
-            >
-              done
-            </button>
-          </div>
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 h-11">
+        <span className="text-subheading">Ask AI</span>
+        <button
+          onClick={onClose}
+          className="text-[15px] text-[var(--color-accent)] font-medium min-w-[44px] min-h-[44px] flex items-center justify-end active:opacity-50"
+        >
+          done
+        </button>
+      </div>
 
           {/* Messages */}
           <div
@@ -143,8 +135,6 @@ export function ChatPanel() {
               </button>
             </div>
           </form>
-        </div>
-      )}
-    </>
+    </div>
   );
 }
