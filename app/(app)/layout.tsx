@@ -1,4 +1,5 @@
 import { BottomNav } from "@/components/bottom-nav";
+import { ChatPanel } from "@/components/chat-panel";
 
 export default function AppLayout({
   children,
@@ -10,6 +11,7 @@ export default function AppLayout({
       <main className="pb-[calc(52px+env(safe-area-inset-bottom))]">
         {children}
       </main>
+      <ChatPanel />
       <BottomNav />
     </div>
   );
