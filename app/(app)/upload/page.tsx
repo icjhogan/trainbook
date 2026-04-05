@@ -137,7 +137,7 @@ export default function UploadPage() {
   // Loading state
   if (state === "uploading" || state === "extracting") {
     return (
-      <div className="px-5 pt-4 flex flex-col items-center justify-center min-h-[70dvh] animate-fade-in">
+      <div className="px-5 pt-14 flex flex-col items-center justify-center min-h-[70dvh] animate-fade-in">
         {imagePreview && (
           <img
             src={imagePreview}
@@ -158,7 +158,7 @@ export default function UploadPage() {
   // Confirm state
   if (state === "confirm") {
     return (
-      <div className="px-5 pt-4 pb-8 animate-fade-in-up">
+      <div className="px-5 pt-14 pb-8 animate-fade-in-up">
         <h1 className="text-title mb-8">
           {workouts.length === 1
             ? "Confirm entry"

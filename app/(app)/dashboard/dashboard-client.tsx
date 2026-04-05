@@ -29,7 +29,7 @@ function daysAgo(dateIso: string): number {
 export function DashboardClient({ workouts }: { workouts: Workout[] }) {
   if (workouts.length === 0) {
     return (
-      <div className="px-5 pt-4 animate-fade-in-up">
+      <div className="px-5 pt-14 animate-fade-in-up">
         <div className="mt-24 text-center">
           <p className="text-body text-[var(--color-muted)]">
             add some entries to see your training data here
@@ -134,7 +134,7 @@ export function DashboardClient({ workouts }: { workouts: Workout[] }) {
     .sort(([, a], [, b]) => daysAgo(b) - daysAgo(a));
 
   return (
-    <div className="px-5 pt-4 pb-8 animate-fade-in-up">
+    <div className="px-5 pt-14 pb-8 animate-fade-in-up">
 
       {/* ── This Week ── */}
       <section className="mb-10">
