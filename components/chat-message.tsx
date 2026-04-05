@@ -9,7 +9,7 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
   if (isUser) {
     return (
       <div className="flex justify-end animate-fade-in">
-        <div className="max-w-[85%] px-4 py-2.5 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[18px] rounded-br-[4px]">
+        <div className="max-w-[85%] px-4 py-2.5 glass-button rounded-[18px] rounded-br-[4px]">
           <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
             {content}
           </p>

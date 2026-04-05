@@ -47,7 +47,7 @@ export default function SignupPage() {
           onChange={(e) => setEmail(e.target.value)}
           required
           autoComplete="email"
-          className="w-full px-4 py-3.5 rounded-[var(--radius)] bg-[var(--color-surface)] text-[15px] outline-none placeholder:text-[var(--color-muted)] focus:ring-2 focus:ring-[var(--color-text)]/10"
+          className="w-full px-4 py-3.5 rounded-[var(--radius)] glass-input text-[15px] outline-none placeholder:text-[var(--color-muted)]"
         />
 
         <input
@@ -58,7 +58,7 @@ export default function SignupPage() {
           required
           minLength={6}
           autoComplete="new-password"
-          className="w-full px-4 py-3.5 rounded-[var(--radius)] bg-[var(--color-surface)] text-[15px] outline-none placeholder:text-[var(--color-muted)] focus:ring-2 focus:ring-[var(--color-text)]/10"
+          className="w-full px-4 py-3.5 rounded-[var(--radius)] glass-input text-[15px] outline-none placeholder:text-[var(--color-muted)]"
         />
       </div>
 

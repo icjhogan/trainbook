@@ -220,7 +220,7 @@ export default function UploadPage() {
         {/* Camera target area */}
         <button
           onClick={() => cameraRef.current?.click()}
-          className="w-full aspect-[4/3] max-w-[320px] rounded-[20px] border-2 border-dashed border-[var(--color-border)] flex flex-col items-center justify-center gap-4 active:scale-[0.97] active:border-[var(--color-secondary)] transition-all"
+          className="w-full aspect-[4/3] max-w-[320px] rounded-[20px] glass flex flex-col items-center justify-center gap-4 active:scale-[0.97] transition-all"
         >
           <div className="w-14 h-14 rounded-full bg-[var(--color-text)] flex items-center justify-center">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -248,7 +248,7 @@ export default function UploadPage() {
         {/* File picker */}
         <button
           onClick={() => fileRef.current?.click()}
-          className="w-full max-w-[320px] py-3.5 text-[15px] text-center text-[var(--color-secondary)] bg-[var(--color-surface)] rounded-[var(--radius)] min-h-[48px] active:bg-[var(--color-border)] transition-colors"
+          className="w-full max-w-[320px] py-3.5 text-[15px] text-center text-[var(--color-secondary)] glass-button rounded-[var(--radius)] min-h-[48px] active:scale-[0.98] transition-all"
         >
           Choose from library
         </button>

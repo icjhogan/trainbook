@@ -135,7 +135,7 @@ export function FeedClient({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search workouts..."
-            className="w-full pl-10 pr-4 py-3 rounded-[var(--radius)] bg-[var(--color-surface)] text-[15px] outline-none placeholder:text-[var(--color-muted)] focus:ring-2 focus:ring-[var(--color-text)]/10"
+            className="w-full pl-10 pr-4 py-3 rounded-[var(--radius)] glass-input text-[15px] outline-none placeholder:text-[var(--color-muted)]"
           />
           {query && (
             <button

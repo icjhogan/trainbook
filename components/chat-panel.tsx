@@ -388,7 +388,7 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
           <div className="px-4 pb-[calc(10px+env(safe-area-inset-bottom))] pt-2">
             <form
               onSubmit={handleSubmit}
-              className="flex items-end gap-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[20px] px-4 py-1.5"
+              className="glass-pill flex items-end gap-2 rounded-[20px] px-4 py-1.5"
             >
               <textarea
                 ref={inputRef}

@@ -46,7 +46,7 @@ export function WorkoutForm({
   }
 
   const inputClass =
-    "w-full px-3 py-2.5 rounded-[var(--radius-sm)] bg-[var(--color-surface)] text-[15px] outline-none focus:ring-2 focus:ring-[var(--color-text)]/10 placeholder:text-[var(--color-muted)]";
+    "w-full px-3 py-2.5 rounded-[var(--radius-sm)] glass-input text-[15px] outline-none placeholder:text-[var(--color-muted)]";
 
   return (
     <div className="space-y-6">
@@ -117,7 +117,7 @@ export function WorkoutForm({
           {workout.exercises.map((ex, i) => (
             <div
               key={i}
-              className="bg-[var(--color-surface)] rounded-[var(--radius-sm)] p-3 space-y-1.5"
+              className="glass-input rounded-[var(--radius-sm)] p-3 space-y-1.5"
             >
               <input
                 value={ex.description}
@@ -158,7 +158,7 @@ export function WorkoutForm({
       {workout.technical_cues?.length > 0 && (
         <div>
           <label className="text-label mb-1.5 block">cues</label>
-          <div className="bg-[var(--color-surface)] rounded-[var(--radius-sm)] p-3 space-y-1">
+          <div className="glass-input rounded-[var(--radius-sm)] p-3 space-y-1">
             {workout.technical_cues.map((cue, i) => (
               <input
                 key={i}

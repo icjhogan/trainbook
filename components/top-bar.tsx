@@ -33,7 +33,7 @@ export function TopBar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 bg-[var(--color-bg)]/80 backdrop-blur-xl">
+    <header className="fixed top-0 left-0 right-0 z-30 glass-bar">
       <div className="h-[env(safe-area-inset-top)]" />
       <div className="flex items-center justify-between h-[44px] px-5 max-w-[430px] mx-auto">
         {/* Left side */}
@@ -63,7 +63,7 @@ export function TopBar() {
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center justify-center w-[34px] h-[34px] rounded-full bg-[var(--color-surface-raised)] border border-[var(--color-border)] active:scale-90 transition-transform"
+            className="glass-button flex items-center justify-center w-[34px] h-[34px] rounded-full active:scale-90 transition-transform"
           >
             <svg
               width="16"
@@ -81,7 +81,7 @@ export function TopBar() {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-[40px] w-[180px] bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[var(--radius)] shadow-lg py-1 animate-fade-in z-50">
+            <div className="absolute right-0 top-[40px] w-[180px] glass-dropdown rounded-[var(--radius)] py-1 animate-fade-in z-50">
               <Link
                 href="/dashboard"
                 onClick={() => setMenuOpen(false)}
