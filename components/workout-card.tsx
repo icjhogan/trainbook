@@ -12,10 +12,11 @@ interface WorkoutCardProps {
   onDelete: (id: string) => void;
   onUpdate: (updated: Workout) => void;
   onOpenChat: () => void;
+  defaultExpanded?: boolean;
 }
 
-export function WorkoutCard({ workout, onDelete, onUpdate, onOpenChat }: WorkoutCardProps) {
-  const [expanded, setExpanded] = useState(false);
+export function WorkoutCard({ workout, onDelete, onUpdate, onOpenChat, defaultExpanded = false }: WorkoutCardProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);

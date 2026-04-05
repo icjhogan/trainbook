@@ -203,14 +203,38 @@ export function FeedClient({
             </p>
             <div className="space-y-1">
               {filteredWorkouts.map((w) => (
-                <WorkoutRow
-                  key={w.id}
-                  workout={w}
-                  highlight={query}
-                  onTap={(id) => {
-                    setExpandedId(id === expandedId ? null : id);
-                  }}
-                />
+                expandedId === w.id ? (
+                  /* Expanded — full workout card inline */
+                  <div key={w.id} className="animate-fade-in">
+                    <button
+                      onClick={() => setExpandedId(null)}
+                      className="flex items-center gap-1.5 mb-2 py-1 text-[13px] text-[var(--color-secondary)] active:opacity-50"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 18 9 12 15 6" />
+                      </svg>
+                      Back to results
+                    </button>
+                    <WorkoutCard
+                      workout={w}
+                      defaultExpanded
+                      onDelete={(id) => {
+                        handleDelete(id);
+                        setExpandedId(null);
+                      }}
+                      onUpdate={handleUpdate}
+                      onOpenChat={openChat}
+                    />
+                  </div>
+                ) : (
+                  /* Compact row */
+                  <WorkoutRow
+                    key={w.id}
+                    workout={w}
+                    highlight={query}
+                    onTap={(id) => setExpandedId(id)}
+                  />
+                )
               ))}
             </div>
             {filteredWorkouts.length === 0 && (
@@ -222,7 +246,7 @@ export function FeedClient({
             )}
           </>
         ) : (
-          /* Empty state — show recent when no query */
+          /* Empty state */
           <div className="mt-10 text-center">
             <p className="text-[14px] text-[var(--color-muted)]">
               Search by date, workout type, event, or notes
