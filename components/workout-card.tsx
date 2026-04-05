@@ -60,7 +60,7 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
     }
   }
 
-  // Edit mode — show the workout form
+  // Edit mode
   if (editing) {
     return (
       <div className="py-4 -mx-5 px-5 animate-fade-in">
@@ -68,9 +68,13 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
           <p className="text-label">editing</p>
           <button
             onClick={() => setEditing(false)}
-            className="text-caption text-[var(--color-secondary)] min-h-[44px] flex items-center active:opacity-50"
+            className="w-[32px] h-[32px] flex items-center justify-center rounded-full active:bg-[var(--color-surface)] transition-colors"
+            aria-label="Cancel"
           >
-            Cancel
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" strokeWidth="2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
         <WorkoutForm
@@ -84,20 +88,38 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
   }
 
   return (
-    <article
-      onClick={() => setExpanded(!expanded)}
-      className="py-4 active:bg-[var(--color-surface)] -mx-5 px-5 transition-colors rounded-lg cursor-pointer"
-    >
-      {/* Header */}
-      <h3 className="text-subheading">
-        {workout.date}
-      </h3>
+    <article className="py-4 -mx-5 px-5 transition-colors rounded-lg">
+      {/* Header row with expand/collapse chevron */}
+      <div
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-start justify-between cursor-pointer active:opacity-70 transition-opacity"
+      >
+        <div className="flex-1">
+          <h3 className="text-subheading">{workout.date}</h3>
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+            <WorkoutPill label={workout.workout_type} kind="type" />
+            {workout.event_focus?.map((e) => (
+              <WorkoutPill key={e} label={e} kind="event" />
+            ))}
+          </div>
+        </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-        <WorkoutPill label={workout.workout_type} kind="type" />
-        {workout.event_focus?.map((e) => (
-          <WorkoutPill key={e} label={e} kind="event" />
-        ))}
+        {/* Chevron */}
+        <div className="mt-1 ml-2 flex-shrink-0">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--color-muted)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
       </div>
 
       {/* Collapsed preview */}
@@ -131,7 +153,58 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="mt-4 space-y-5 animate-fade-in">
+        <div className="mt-4 animate-fade-in">
+          {/* Action icons — top right of expanded content */}
+          <div className="flex items-center justify-end gap-1 mb-4">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditing(true);
+              }}
+              className="w-[36px] h-[36px] flex items-center justify-center rounded-full glass-button active:scale-90 transition-all"
+              aria-label="Edit"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+              </svg>
+            </button>
+
+            {!confirmDelete ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmDelete(true);
+                }}
+                className="w-[36px] h-[36px] flex items-center justify-center rounded-full glass-button active:scale-90 transition-all"
+                aria-label="Delete"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="1.5" strokeLinecap="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => onDelete(workout.id)}
+                  className="h-[36px] px-3 flex items-center justify-center rounded-full text-[12px] font-medium text-[var(--color-danger)] glass-button active:scale-95 transition-all"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="w-[36px] h-[36px] flex items-center justify-center rounded-full glass-button active:scale-90 transition-all"
+                  aria-label="Cancel"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="2" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Exercises */}
           <div className="space-y-3">
             {workout.exercises?.map((ex, i) => (
@@ -165,7 +238,7 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
 
           {/* Cues */}
           {workout.technical_cues?.length > 0 && (
-            <div>
+            <div className="mt-5">
               <p className="text-label mb-1.5">cues</p>
               <div className="space-y-0.5">
                 {workout.technical_cues.map((cue, i) => (
@@ -179,56 +252,13 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
 
           {/* Notes */}
           {workout.personal_notes && (
-            <div>
+            <div className="mt-5">
               <p className="text-label mb-1.5">notes</p>
               <p className="text-body italic text-[var(--color-secondary)]">
                 {workout.personal_notes}
               </p>
             </div>
           )}
-
-          {/* Actions */}
-          <div className="flex items-center gap-4">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditing(true);
-              }}
-              className="text-caption text-[var(--color-secondary)] font-medium min-h-[44px] flex items-center active:opacity-50"
-            >
-              edit
-            </button>
-
-            {!confirmDelete ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setConfirmDelete(true);
-                }}
-                className="text-caption text-[var(--color-muted)] min-h-[44px] flex items-center"
-              >
-                delete
-              </button>
-            ) : (
-              <div
-                className="flex items-center gap-4 animate-fade-in"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => onDelete(workout.id)}
-                  className="text-caption text-[var(--color-danger)] font-medium min-h-[44px] flex items-center"
-                >
-                  confirm
-                </button>
-                <button
-                  onClick={() => setConfirmDelete(false)}
-                  className="text-caption text-[var(--color-muted)] min-h-[44px] flex items-center"
-                >
-                  cancel
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       )}
     </article>
