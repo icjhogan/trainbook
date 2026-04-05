@@ -6,6 +6,7 @@ import { WorkoutRow } from "@/components/workout-row";
 import { Toast } from "@/components/toast";
 import { useSearch } from "@/lib/search-context";
 import { getTypeColor, getEventColor } from "@/lib/workout-colors";
+import { useChatOpener } from "@/lib/chat-opener-context";
 import type { Workout } from "@/lib/types";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 
@@ -72,6 +73,7 @@ export function FeedClient({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [toast, setToast] = useState("");
   const { isSearching, query, setQuery } = useSearch();
+  const openChat = useChatOpener();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
@@ -243,6 +245,7 @@ export function FeedClient({
                     workout={w}
                     onDelete={handleDelete}
                     onUpdate={handleUpdate}
+                    onOpenChat={openChat}
                   />
                 ))}
               </div>

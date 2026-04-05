@@ -4,6 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ChatMessage } from "./chat-message";
 import { createClient } from "@/lib/supabase/client";
+import { useChatContext } from "@/lib/chat-context";
 import { useRef, useEffect, useState, useCallback } from "react";
 
 interface Chat {
@@ -38,6 +39,7 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState("");
   const supabase = createClient();
+  const { attachedWorkout, clearAttachment } = useChatContext();
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({
@@ -60,10 +62,17 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
 
   useEffect(() => {
     if (open) {
+      // If opening with an attached workout, go straight to a new thread
+      if (attachedWorkout) {
+        startNewChat().then(() => {
+          // Auto-focus input so she can type her question
+        });
+        return;
+      }
       loadChats();
       if (!activeChatId) setView("list");
     }
-  }, [open, loadChats, activeChatId]);
+  }, [open, loadChats, activeChatId, attachedWorkout]);
 
   // Auto-scroll
   useEffect(() => {
@@ -199,7 +208,32 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    sendMessage({ text: input });
+
+    let text = input;
+
+    // If there's an attached workout and this is the first message, include it
+    if (attachedWorkout && messages.length === 0) {
+      const w = attachedWorkout;
+      const exercises = (w.exercises || [])
+        .map((ex: any) => {
+          let line = ex.description;
+          if (ex.times?.length) line += ` (${ex.times.join(", ")})`;
+          return `- ${line}`;
+        })
+        .join("\n");
+
+      const context = [
+        `[Referring to workout: ${w.date} — ${w.workout_type}]`,
+        exercises,
+        w.technical_cues?.length ? `Cues: ${w.technical_cues.join("; ")}` : "",
+        w.personal_notes ? `Notes: ${w.personal_notes}` : "",
+      ].filter(Boolean).join("\n");
+
+      text = `${context}\n\n${input}`;
+      clearAttachment();
+    }
+
+    sendMessage({ text });
     setInput("");
   }
 
@@ -386,6 +420,24 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
 
           {/* Input */}
           <div className="px-4 pb-[calc(10px+env(safe-area-inset-bottom))] pt-2">
+            {/* Attached workout indicator */}
+            {attachedWorkout && messages.length === 0 && (
+              <div className="flex items-center gap-2 px-4 py-2 mb-2 rounded-[var(--radius-sm)] bg-[var(--color-surface)] animate-fade-in">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] text-[var(--color-muted)]">Asking about</p>
+                  <p className="text-[13px] font-medium truncate">{attachedWorkout.date} — {attachedWorkout.workout_type}</p>
+                </div>
+                <button
+                  onClick={clearAttachment}
+                  className="w-[24px] h-[24px] flex items-center justify-center rounded-full active:bg-[var(--color-surface-raised)]"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            )}
             <form
               onSubmit={handleSubmit}
               className="glass-pill flex items-end gap-2 rounded-[20px] px-4 py-1.5"
@@ -394,7 +446,7 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Message..."
+                placeholder={attachedWorkout && messages.length === 0 ? "Ask about this workout..." : "Message..."}
                 rows={1}
                 className="flex-1 text-[15px] bg-transparent outline-none resize-none py-2 max-h-[120px] placeholder:text-[var(--color-muted)]"
                 onKeyDown={(e) => {
