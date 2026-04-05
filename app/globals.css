@@ -145,6 +145,75 @@ body {
     0 0 0 3px rgba(255, 255, 255, 0.04);
 }
 
+/* Chat markdown rendering */
+.chat-markdown p {
+  margin-bottom: 0.6em;
+}
+.chat-markdown p:last-child {
+  margin-bottom: 0;
+}
+.chat-markdown strong {
+  font-weight: 600;
+  color: var(--color-text);
+}
+.chat-markdown em {
+  font-style: italic;
+  color: var(--color-secondary);
+}
+.chat-markdown h1, .chat-markdown h2, .chat-markdown h3 {
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+  color: var(--color-text);
+}
+.chat-markdown h1 { font-size: 17px; }
+.chat-markdown h2 { font-size: 16px; }
+.chat-markdown h3 { font-size: 15px; }
+.chat-markdown ul, .chat-markdown ol {
+  padding-left: 1.2em;
+  margin-bottom: 0.6em;
+}
+.chat-markdown li {
+  margin-bottom: 0.25em;
+}
+.chat-markdown li::marker {
+  color: var(--color-muted);
+}
+.chat-markdown code {
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 13px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-secondary);
+}
+.chat-markdown pre {
+  margin: 0.6em 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  overflow-x: auto;
+}
+.chat-markdown pre code {
+  padding: 0;
+  background: none;
+}
+.chat-markdown hr {
+  border: none;
+  border-top: 1px solid var(--color-separator);
+  margin: 1em 0;
+}
+.chat-markdown a {
+  color: var(--color-secondary);
+  text-decoration: underline;
+}
+.chat-markdown blockquote {
+  border-left: 2px solid var(--color-border);
+  padding-left: 12px;
+  margin: 0.6em 0;
+  color: var(--color-secondary);
+}
+
 /* Smooth transitions globally */
 input, textarea, button, a {
   transition: all var(--duration) var(--ease-out);

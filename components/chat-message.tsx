@@ -1,3 +1,5 @@
+import ReactMarkdown from "react-markdown";
+
 interface ChatMessageProps {
   role: "user" | "assistant";
   content: string;
@@ -18,11 +20,10 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
     );
   }
 
-  // Assistant — Claude style: no bubble, just text, left-aligned
   return (
     <div className="animate-fade-in">
-      <div className="text-[15px] leading-[1.65] text-[var(--color-text)] whitespace-pre-wrap">
-        {content}
+      <div className="chat-markdown text-[15px] leading-[1.65] text-[var(--color-text)]">
+        <ReactMarkdown>{content}</ReactMarkdown>
       </div>
     </div>
   );
