@@ -32,6 +32,8 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [initialMessages, setInitialMessages] = useState<SavedMessage[]>([]);
   const [loadingChats, setLoadingChats] = useState(true);
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState("");
@@ -169,6 +171,24 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
     loadChats();
   }
 
+  function startRename(chat: Chat) {
+    setEditingChatId(chat.id);
+    setEditTitle(chat.title);
+  }
+
+  async function submitRename() {
+    if (!editingChatId || !editTitle.trim()) {
+      setEditingChatId(null);
+      return;
+    }
+    await supabase
+      .from("chats")
+      .update({ title: editTitle.trim() })
+      .eq("id", editingChatId);
+    setEditingChatId(null);
+    loadChats();
+  }
+
   function getMessageText(message: (typeof messages)[number]): string {
     return message.parts
       .filter((part): part is Extract<typeof part, { type: "text" }> => part.type === "text")
@@ -245,24 +265,64 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
             ) : (
               <div className="px-5 py-3">
                 {chats.map((chat) => (
-                  <button
+                  <div
                     key={chat.id}
-                    onClick={() => openChat(chat.id)}
-                    className="w-full flex items-center justify-between py-3 border-b border-[var(--color-separator)] active:opacity-60 transition-opacity text-left group"
+                    className="flex items-center py-3 border-b border-[var(--color-separator)]"
                   >
-                    <div className="flex-1 min-w-0 mr-3">
-                      <p className="text-[15px] truncate">{chat.title}</p>
-                      <p className="text-caption text-[var(--color-muted)] mt-0.5">
-                        {new Date(chat.updated_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </p>
-                    </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="2" strokeLinecap="round">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </button>
+                    {editingChatId === chat.id ? (
+                      /* Inline rename */
+                      <form
+                        onSubmit={(e) => { e.preventDefault(); submitRename(); }}
+                        className="flex-1 flex items-center gap-2"
+                      >
+                        <input
+                          autoFocus
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          onBlur={submitRename}
+                          className="flex-1 text-[15px] bg-[var(--color-surface)] px-3 py-1.5 rounded-[var(--radius-sm)] outline-none"
+                        />
+                      </form>
+                    ) : (
+                      /* Normal row */
+                      <button
+                        onClick={() => openChat(chat.id)}
+                        className="flex-1 text-left min-w-0 mr-2 active:opacity-60 transition-opacity"
+                      >
+                        <p className="text-[15px] truncate">{chat.title}</p>
+                        <p className="text-caption text-[var(--color-muted)] mt-0.5">
+                          {new Date(chat.updated_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </p>
+                      </button>
+                    )}
+
+                    {editingChatId !== chat.id && (
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => startRename(chat)}
+                          className="w-[36px] h-[36px] flex items-center justify-center rounded-full active:bg-[var(--color-surface)] transition-colors"
+                          aria-label="Rename"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="2" strokeLinecap="round">
+                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => deleteChat(chat.id)}
+                          className="w-[36px] h-[36px] flex items-center justify-center rounded-full active:bg-[var(--color-surface)] transition-colors"
+                          aria-label="Delete"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth="2" strokeLinecap="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
