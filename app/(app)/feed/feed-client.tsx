@@ -2,9 +2,11 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { WorkoutCard } from "@/components/workout-card";
+import { WorkoutRow } from "@/components/workout-row";
 import { Toast } from "@/components/toast";
+import { useSearch } from "@/lib/search-context";
 import type { Workout } from "@/lib/types";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 
 interface WeekGroup {
   label: string;
@@ -42,14 +44,43 @@ function groupByWeek(workouts: Workout[]): WeekGroup[] {
     });
 }
 
+function searchWorkouts(workouts: Workout[], query: string): Workout[] {
+  const q = query.toLowerCase().trim();
+  if (!q) return workouts;
+
+  return workouts.filter((w) => {
+    const fields = [
+      w.date,
+      w.workout_type,
+      ...(w.event_focus || []),
+      w.personal_notes || "",
+      w.raw_text || "",
+      ...(w.technical_cues || []),
+      ...(w.exercises || []).map((e) => e.description),
+    ];
+    return fields.some((f) => f.toLowerCase().includes(q));
+  });
+}
+
 export function FeedClient({
   initialWorkouts,
 }: {
   initialWorkouts: Workout[];
 }) {
   const [workouts, setWorkouts] = useState(initialWorkouts);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [toast, setToast] = useState("");
+  const { isSearching, query, setQuery } = useSearch();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
+
+  useEffect(() => {
+    if (isSearching) {
+      // Small delay so the animation can start
+      const timer = setTimeout(() => searchInputRef.current?.focus(), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isSearching]);
 
   const handleDelete = useCallback(
     async (id: string) => {
@@ -62,8 +93,105 @@ export function FeedClient({
     [supabase]
   );
 
-  const groups = groupByWeek(workouts);
+  const filteredWorkouts = useMemo(
+    () => (isSearching ? searchWorkouts(workouts, query) : workouts),
+    [workouts, isSearching, query]
+  );
 
+  const groups = groupByWeek(filteredWorkouts);
+
+  // Search mode
+  if (isSearching) {
+    return (
+      <div className="px-5 pt-[60px] pb-8 animate-fade-in">
+        {/* Search input */}
+        <div className="relative mb-4">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--color-muted)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            className="absolute left-3 top-1/2 -translate-y-1/2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            ref={searchInputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search workouts..."
+            className="w-full pl-10 pr-4 py-3 rounded-[var(--radius)] bg-[var(--color-surface)] text-[15px] outline-none placeholder:text-[var(--color-muted)] focus:ring-2 focus:ring-[var(--color-text)]/10"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-[20px] h-[20px] rounded-full bg-[var(--color-border)] flex items-center justify-center"
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" strokeWidth="3" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Quick filters */}
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-5 px-5">
+          {["Tempo", "Practice", "Meet", "High Jump", "Hurdles", "Long Jump", "Lift"].map((tag) => {
+            const isActive = query.toLowerCase() === tag.toLowerCase();
+            return (
+              <button
+                key={tag}
+                onClick={() => setQuery(isActive ? "" : tag)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all active:scale-95 ${
+                  isActive
+                    ? "bg-[var(--color-text)] text-white"
+                    : "bg-[var(--color-surface)] text-[var(--color-secondary)]"
+                }`}
+              >
+                {tag}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Results count */}
+        <p className="text-caption text-[var(--color-muted)] mb-2">
+          {filteredWorkouts.length} result{filteredWorkouts.length !== 1 ? "s" : ""}
+        </p>
+
+        {/* Compact results */}
+        <div className="space-y-0.5">
+          {filteredWorkouts.map((w) => (
+            <WorkoutRow
+              key={w.id}
+              workout={w}
+              highlight={query}
+              onTap={(id) => {
+                setExpandedId(id === expandedId ? null : id);
+              }}
+            />
+          ))}
+        </div>
+
+        {filteredWorkouts.length === 0 && query && (
+          <div className="mt-12 text-center">
+            <p className="text-body text-[var(--color-muted)]">
+              no matches for &ldquo;{query}&rdquo;
+            </p>
+          </div>
+        )}
+
+        <Toast message={toast} visible={!!toast} onDone={() => setToast("")} />
+      </div>
+    );
+  }
+
+  // Normal feed mode
   return (
     <div className="px-5 pt-[60px] pb-8 animate-fade-in-up">
       <h1 className="text-title">entries</h1>
