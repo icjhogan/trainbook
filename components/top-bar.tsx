@@ -14,7 +14,6 @@ export function TopBar() {
 
   const isHome = pathname === "/feed" || pathname === "/";
 
-  // Close menu on outside tap
   useEffect(() => {
     if (!menuOpen) return;
     function handleTap(e: MouseEvent) {
@@ -33,20 +32,18 @@ export function TopBar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 glass-bar">
+    <div className="fixed top-0 left-0 right-0 z-30 pointer-events-none">
       <div className="h-[env(safe-area-inset-top)]" />
       <div className="flex items-center justify-between h-[44px] px-5 max-w-[430px] mx-auto">
-        {/* Left side */}
-        {isHome ? (
-          <div className="min-w-[44px]" />
-        ) : (
+        {/* Left — back button on sub-pages only */}
+        {!isHome ? (
           <button
             onClick={() => router.push("/feed")}
-            className="flex items-center justify-center min-h-[44px] min-w-[44px] -ml-3 active:opacity-50 transition-opacity"
+            className="glass-button flex items-center justify-center w-[34px] h-[34px] rounded-full active:scale-90 transition-transform pointer-events-auto"
           >
             <svg
-              width="22"
-              height="22"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="var(--color-text)"
@@ -57,10 +54,12 @@ export function TopBar() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
+        ) : (
+          <div />
         )}
 
-        {/* Right side — menu */}
-        <div className="relative" ref={menuRef}>
+        {/* Right — menu */}
+        <div className="relative pointer-events-auto" ref={menuRef}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="glass-button flex items-center justify-center w-[34px] h-[34px] rounded-full active:scale-90 transition-transform"
@@ -85,7 +84,7 @@ export function TopBar() {
               <Link
                 href="/dashboard"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-[14px] active:bg-[var(--color-surface)] transition-colors"
+                className="flex items-center gap-3 px-4 py-2.5 text-[14px] active:bg-white/5 transition-colors"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" strokeWidth="1.5" strokeLinecap="round">
                   <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -95,10 +94,10 @@ export function TopBar() {
                 </svg>
                 Dashboard
               </Link>
-              <div className="h-px bg-[var(--color-separator)] mx-3 my-1" />
+              <div className="h-px bg-white/5 mx-3 my-1" />
               <button
                 onClick={() => { setMenuOpen(false); handleSignOut(); }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-[14px] text-[var(--color-secondary)] active:bg-[var(--color-surface)] transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-[14px] text-[var(--color-secondary)] active:bg-white/5 transition-colors"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -111,6 +110,6 @@ export function TopBar() {
           )}
         </div>
       </div>
-    </header>
+    </div>
   );
 }

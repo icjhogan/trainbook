@@ -22,7 +22,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-[var(--color-bg)]">
       <TopBar />
-      <main className="pt-[calc(44px+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]">
+      <main className="pt-[env(safe-area-inset-top)] pb-[calc(68px+env(safe-area-inset-bottom))]">
         {children}
       </main>
       <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
