@@ -1,4 +1,5 @@
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ChatMessageProps {
   role: "user" | "assistant";
@@ -23,7 +24,7 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
   return (
     <div className="animate-fade-in">
       <div className="chat-markdown text-[15px] leading-[1.65] text-[var(--color-text)]">
-        <ReactMarkdown>{content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </div>
     </div>
   );

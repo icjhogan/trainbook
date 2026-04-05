@@ -213,6 +213,27 @@ body {
   margin: 0.6em 0;
   color: var(--color-secondary);
 }
+.chat-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.6em 0;
+  font-size: 13px;
+}
+.chat-markdown thead th {
+  text-align: left;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+.chat-markdown tbody td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--color-separator);
+  color: var(--color-secondary);
+}
+.chat-markdown tbody tr:last-child td {
+  border-bottom: none;
+}
 
 /* Smooth transitions globally */
 input, textarea, button, a {
