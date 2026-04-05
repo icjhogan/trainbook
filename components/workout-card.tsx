@@ -103,15 +103,15 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
   }
 
   return (
-    <article className="py-4 -mx-5 px-5">
+    <article className="py-3.5 px-4 rounded-[var(--radius)] bg-[var(--color-surface)]/50">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div
           onClick={() => setExpanded(!expanded)}
           className="flex-1 cursor-pointer active:opacity-70 transition-opacity"
         >
-          <h3 className="text-subheading">{workout.date}</h3>
-          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+          <h3 className="text-[16px] font-semibold tracking-tight">{workout.date}</h3>
+          <div className="flex flex-wrap items-center gap-1.5 mt-1">
             <WorkoutPill label={workout.workout_type} kind="type" />
             {workout.event_focus?.map((e) => (
               <WorkoutPill key={e} label={e} kind="event" />
@@ -192,14 +192,14 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
       {!expanded && (
         <div
           onClick={() => setExpanded(true)}
-          className="mt-2.5 cursor-pointer active:opacity-70 transition-opacity"
+          className="mt-2 cursor-pointer active:opacity-70 transition-opacity"
         >
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {exercisePreview.map((ex, i) => (
-              <p key={i} className="text-body text-[var(--color-text)]">
+              <p key={i} className="text-[14px] text-[var(--color-secondary)]">
                 {ex.description}
                 {ex.times?.length > 0 && (
-                  <span className="text-[var(--color-secondary)]">
+                  <span className="text-[var(--color-muted)]">
                     {" "}&mdash; {ex.times.join(", ")}
                   </span>
                 )}
@@ -207,13 +207,13 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
             ))}
           </div>
           {hasMore && (
-            <p className="text-caption text-[var(--color-muted)] mt-1">
+            <p className="text-[12px] text-[var(--color-muted)] mt-1">
               +{(workout.exercises?.length || 0) - 2} more
             </p>
           )}
 
           {workout.personal_notes && (
-            <p className="text-caption italic text-[var(--color-secondary)] mt-2 line-clamp-2">
+            <p className="text-[13px] italic text-[var(--color-muted)] mt-1.5 line-clamp-2">
               {workout.personal_notes}
             </p>
           )}

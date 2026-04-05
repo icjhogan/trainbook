@@ -225,15 +225,18 @@ export function FeedClient({
           </p>
         </div>
       ) : (
-        <div className="mt-6">
+        <div className="mt-4">
           {groups.map((group, gi) => (
-            <div key={group.label} className={gi > 0 ? "mt-2" : ""}>
-              <div className="sticky top-0 z-10 bg-[var(--color-bg)] pt-3 pb-2">
-                <p className="text-label">
+            <div key={group.label} className={gi > 0 ? "mt-8" : ""}>
+              {/* Week header */}
+              <div className="sticky top-0 z-10 bg-[var(--color-bg)] pt-4 pb-3">
+                <p className="text-[13px] font-semibold text-[var(--color-secondary)] tracking-wide">
                   {group.label}
                 </p>
               </div>
-              <div className="divide-y divide-[var(--color-separator)]">
+
+              {/* Cards */}
+              <div className="space-y-1">
                 {group.workouts.map((w) => (
                   <WorkoutCard
                     key={w.id}
