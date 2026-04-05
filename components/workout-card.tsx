@@ -128,9 +128,9 @@ export function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
 
           {/* Flags */}
           {hasFlags && (
-            <div className="space-y-1 py-2 px-3 bg-amber-50 rounded-[var(--radius-sm)]">
+            <div className="space-y-1 py-2 px-3 bg-[#3d2e0a] rounded-[var(--radius-sm)]">
               {workout.flags.map((flag, i) => (
-                <p key={i} className="text-caption text-amber-700">{flag}</p>
+                <p key={i} className="text-caption text-[#f0c340]">{flag}</p>
               ))}
             </div>
           )}

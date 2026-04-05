@@ -31,7 +31,6 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
 
   useEffect(() => {
     if (open) {
-      // Small delay to let animation start before focusing
       const timer = setTimeout(() => inputRef.current?.focus(), 100);
       return () => clearTimeout(timer);
     }
@@ -56,85 +55,95 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   return (
     <div className="fixed inset-0 z-50 bg-[var(--color-bg)] flex flex-col animate-slide-up">
       {/* Handle bar */}
-      <div className="flex justify-center pt-2 pb-1">
+      <div className="flex justify-center pt-2 pb-0.5">
         <div className="w-9 h-1 rounded-full bg-[var(--color-border)]" />
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 h-11">
-        <span className="text-subheading">Ask AI</span>
+      {/* Header — Claude style: centered title, close on right */}
+      <div className="flex items-center justify-center relative px-5 h-11 border-b border-[var(--color-separator)]">
+        <span className="text-[15px] font-medium">notebook ai</span>
         <button
           onClick={onClose}
-          className="text-[15px] text-[var(--color-accent)] font-medium min-w-[44px] min-h-[44px] flex items-center justify-end active:opacity-50"
+          className="absolute right-3 text-[15px] text-[var(--color-secondary)] font-medium min-w-[44px] min-h-[44px] flex items-center justify-end active:opacity-50"
         >
-          done
+          Done
         </button>
       </div>
 
-          {/* Messages */}
-          <div
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto px-5 py-4"
-          >
-            {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full opacity-60">
-                <p className="text-body text-[var(--color-muted)] text-center">
-                  ask anything about<br />your training
-                </p>
+      {/* Messages — Claude style: centered, max-width, spacious */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto"
+      >
+        <div className="max-w-[600px] mx-auto px-5 py-6">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center min-h-[50vh]">
+              <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] flex items-center justify-center mb-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                </svg>
               </div>
-            )}
-            <div className="space-y-1">
-              {messages.map((m) => (
-                <ChatMessage
-                  key={m.id}
-                  role={m.role as "user" | "assistant"}
-                  content={getMessageText(m)}
-                />
-              ))}
+              <p className="text-body text-[var(--color-secondary)] text-center">
+                Ask anything about your training
+              </p>
+              <p className="text-caption text-[var(--color-muted)] text-center mt-1">
+                I can search your workouts, find patterns, and answer questions
+              </p>
             </div>
-            {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-              <div className="mt-3">
-                <div className="inline-flex gap-1 px-4 py-2.5 rounded-2xl bg-[var(--color-surface)]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-muted)] animate-pulse-soft" style={{ animationDelay: "0ms" }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-muted)] animate-pulse-soft" style={{ animationDelay: "200ms" }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-muted)] animate-pulse-soft" style={{ animationDelay: "400ms" }} />
-                </div>
-              </div>
-            )}
+          )}
+
+          <div className="space-y-6">
+            {messages.map((m) => (
+              <ChatMessage
+                key={m.id}
+                role={m.role as "user" | "assistant"}
+                content={getMessageText(m)}
+              />
+            ))}
           </div>
 
-          {/* Input */}
-          <form
-            onSubmit={handleSubmit}
-            className="px-4 pb-[calc(8px+env(safe-area-inset-bottom))] pt-2 border-t border-[var(--color-separator)]"
-          >
-            <div className="flex items-end gap-2 bg-[var(--color-surface)] rounded-full px-4 py-1">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about your training..."
-                rows={1}
-                className="flex-1 text-[15px] bg-transparent outline-none resize-none py-2.5 max-h-24 placeholder:text-[var(--color-muted)]"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit(e);
-                  }
-                }}
-              />
-              <button
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className="flex items-center justify-center w-[32px] h-[32px] rounded-full bg-[var(--color-text)] text-white mb-0.5 disabled:opacity-20 active:scale-90 transition-all"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="19" x2="12" y2="5" />
-                  <polyline points="5 12 12 5 19 12" />
-                </svg>
-              </button>
+          {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+            <div className="mt-6 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-muted)] animate-pulse-soft" style={{ animationDelay: "0ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-muted)] animate-pulse-soft" style={{ animationDelay: "200ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-muted)] animate-pulse-soft" style={{ animationDelay: "400ms" }} />
             </div>
-          </form>
+          )}
+        </div>
+      </div>
+
+      {/* Input — Claude style: rounded container, clean */}
+      <div className="px-4 pb-[calc(10px+env(safe-area-inset-bottom))] pt-2">
+        <form
+          onSubmit={handleSubmit}
+          className="flex items-end gap-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[20px] px-4 py-1.5"
+        >
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Message..."
+            rows={1}
+            className="flex-1 text-[15px] bg-transparent outline-none resize-none py-2 max-h-[120px] placeholder:text-[var(--color-muted)]"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim()}
+            className="flex items-center justify-center w-[30px] h-[30px] rounded-full bg-[var(--color-text)] text-[var(--color-bg)] mb-0.5 disabled:opacity-20 active:scale-90 transition-all"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5" />
+              <polyline points="5 12 12 5 19 12" />
+            </svg>
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

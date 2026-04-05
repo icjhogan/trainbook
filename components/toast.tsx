@@ -19,7 +19,7 @@ export function Toast({ message, visible, onDone }: ToastProps) {
   if (!visible) return null;
 
   return (
-    <div className="fixed top-[max(12px,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-[60] px-5 py-2.5 bg-[var(--color-text)] text-white text-[13px] font-medium rounded-full shadow-lg animate-fade-in tracking-wide">
+    <div className="fixed top-[max(12px,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-[60] px-5 py-2.5 bg-[var(--color-surface-raised)] text-[var(--color-text)] border border-[var(--color-border)] text-[13px] font-medium rounded-full shadow-lg animate-fade-in tracking-wide">
       {message}
     </div>
   );

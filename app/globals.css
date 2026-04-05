@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --color-text: #1d1d1f;
-  --color-secondary: #6e6e73;
-  --color-muted: #aeaeb2;
-  --color-border: #e5e5ea;
-  --color-separator: #f2f2f7;
-  --color-bg: #ffffff;
-  --color-surface: #f9f9f9;
-  --color-surface-raised: #ffffff;
-  --color-accent: #1d1d1f;
-  --color-danger: #ff3b30;
+  /* Notion-style dark mode */
+  --color-text: #ebebeb;
+  --color-secondary: #9b9b9b;
+  --color-muted: #5e5e5e;
+  --color-border: #2e2e2e;
+  --color-separator: #252525;
+  --color-bg: #191919;
+  --color-surface: #222222;
+  --color-surface-raised: #2a2a2a;
+  --color-accent: #ebebeb;
+  --color-danger: #eb5757;
 
   --radius: 12px;
   --radius-sm: 8px;
@@ -28,6 +29,7 @@
 html {
   height: 100%;
   overflow: hidden;
+  color-scheme: dark;
 }
 
 body {

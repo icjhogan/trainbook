@@ -212,7 +212,7 @@ export default function UploadPage() {
       {/* Main capture area */}
       <div className="flex-1 flex flex-col items-center justify-center px-8">
         {error && (
-          <div className="mb-8 px-4 py-3 bg-red-50 rounded-[var(--radius-sm)] animate-fade-in w-full">
+          <div className="mb-8 px-4 py-3 bg-[#3b1414] rounded-[var(--radius-sm)] animate-fade-in w-full">
             <p className="text-caption text-[var(--color-danger)]">{error}</p>
           </div>
         )}

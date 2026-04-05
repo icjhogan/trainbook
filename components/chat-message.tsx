@@ -6,15 +6,22 @@ interface ChatMessageProps {
 export function ChatMessage({ role, content }: ChatMessageProps) {
   const isUser = role === "user";
 
+  if (isUser) {
+    return (
+      <div className="flex justify-end animate-fade-in">
+        <div className="max-w-[85%] px-4 py-2.5 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[18px] rounded-br-[4px]">
+          <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
+            {content}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Assistant — Claude style: no bubble, just text, left-aligned
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-2 animate-fade-in`}>
-      <div
-        className={`max-w-[82%] px-4 py-2.5 text-[15px] leading-relaxed ${
-          isUser
-            ? "bg-[var(--color-text)] text-white rounded-[18px] rounded-br-[4px]"
-            : "bg-[var(--color-surface)] text-[var(--color-text)] rounded-[18px] rounded-bl-[4px]"
-        }`}
-      >
+    <div className="animate-fade-in">
+      <div className="text-[15px] leading-[1.65] text-[var(--color-text)] whitespace-pre-wrap">
         {content}
       </div>
     </div>

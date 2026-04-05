@@ -68,9 +68,9 @@ export function WorkoutForm({
 
       {/* Flags */}
       {workout.flags?.length > 0 && (
-        <div className="px-3 py-2.5 bg-amber-50 rounded-[var(--radius-sm)] space-y-1">
+        <div className="px-3 py-2.5 bg-[#3d2e0a] rounded-[var(--radius-sm)] space-y-1">
           {workout.flags.map((flag, i) => (
-            <p key={i} className="text-caption text-amber-700">{flag}</p>
+            <p key={i} className="text-caption text-[#f0c340]">{flag}</p>
           ))}
         </div>
       )}
@@ -191,7 +191,7 @@ export function WorkoutForm({
       <button
         onClick={onSave}
         disabled={saving}
-        className="w-full py-3.5 rounded-[var(--radius)] bg-[var(--color-text)] text-white text-[15px] font-semibold min-h-[50px] active:scale-[0.98] disabled:opacity-40"
+        className="w-full py-3.5 rounded-[var(--radius)] bg-[var(--color-accent)] text-[var(--color-bg)] text-[15px] font-semibold min-h-[50px] active:scale-[0.98] disabled:opacity-40"
       >
         {saving ? "Saving..." : "Save Entry"}
       </button>
