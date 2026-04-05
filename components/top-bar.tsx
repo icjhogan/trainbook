@@ -34,7 +34,7 @@ export function TopBar() {
   return (
     <div className="fixed top-0 left-0 right-0 z-30 pointer-events-none">
       <div className="h-[env(safe-area-inset-top)]" />
-      <div className="flex items-center justify-between h-[44px] px-5 max-w-[430px] mx-auto">
+      <div className="flex items-center justify-between h-[56px] px-5 pt-2 max-w-[430px] mx-auto">
         {/* Left — back button on sub-pages only */}
         {!isHome ? (
           <button

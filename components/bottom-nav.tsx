@@ -9,7 +9,7 @@ interface BottomNavProps {
 
 export function BottomNav({ onOpenChat, onOpenSearch }: BottomNavProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 pb-[calc(10px+env(safe-area-inset-bottom))] px-4 pointer-events-none">
+    <div className="fixed bottom-0 left-0 right-0 z-40 pb-[calc(20px+env(safe-area-inset-bottom))] px-5 pointer-events-none">
       <div className="flex items-end gap-2 max-w-[430px] mx-auto">
         {/* Search */}
         <button
