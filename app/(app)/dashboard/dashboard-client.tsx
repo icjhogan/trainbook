@@ -75,33 +75,33 @@ export function DashboardClient({ workouts }: { workouts: Workout[] }) {
 
   if (workouts.length === 0) {
     return (
-      <div className="px-5 pt-14">
-        <h1 className="text-xl font-semibold tracking-tight">dashboard</h1>
-        <p className="text-sm text-[var(--color-muted)] mt-8 text-center">
-          add some entries to see your training data here.
-        </p>
+      <div className="px-5 pt-[60px] animate-fade-in-up">
+        <h1 className="text-title">dashboard</h1>
+        <div className="mt-24 text-center">
+          <p className="text-body text-[var(--color-muted)]">
+            add some entries to see your training data here
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="px-5 pt-14 pb-8 space-y-10">
-      <p className="text-sm text-[var(--color-muted)] tracking-wide">
-        {weeks.size} weeks. {totalSessions} sessions.{" "}
-        {(totalVolume / 1000).toFixed(1)}km.
+    <div className="px-5 pt-[60px] pb-8 animate-fade-in-up">
+      <h1 className="text-title mb-2">dashboard</h1>
+
+      <p className="text-body text-[var(--color-secondary)] mb-10">
+        {weeks.size} weeks &middot; {totalSessions} sessions &middot;{" "}
+        {(totalVolume / 1000).toFixed(1)}km
       </p>
 
-      <section>
-        <h2 className="text-xs text-[var(--color-muted)] uppercase tracking-wider mb-3">
-          weekly volume
-        </h2>
+      <section className="mb-10">
+        <h2 className="text-label mb-4">weekly volume</h2>
         <VolumeChart data={volumeData} />
       </section>
 
       <section>
-        <h2 className="text-xs text-[var(--color-muted)] uppercase tracking-wider mb-3">
-          event coverage
-        </h2>
+        <h2 className="text-label mb-4">event coverage</h2>
         <EventHeatmap data={heatmapData} />
       </section>
     </div>

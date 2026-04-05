@@ -33,44 +33,52 @@ export default function LoginPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight text-center mb-8">
-        notebook
-      </h1>
+    <form onSubmit={handleSubmit} className="animate-fade-in-up">
+      <h1 className="text-title text-center mb-2">notebook</h1>
+      <p className="text-caption text-[var(--color-muted)] text-center mb-10">
+        your training journal
+      </p>
 
-      <input
-        type="email"
-        placeholder="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-base outline-none focus:border-[var(--color-accent)] transition-colors"
-      />
+      <div className="space-y-3 mb-6">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+          className="w-full px-4 py-3.5 rounded-[var(--radius)] bg-[var(--color-surface)] text-[15px] outline-none placeholder:text-[var(--color-muted)] focus:ring-2 focus:ring-[var(--color-text)]/10"
+        />
 
-      <input
-        type="password"
-        placeholder="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        className="w-full px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-base outline-none focus:border-[var(--color-accent)] transition-colors"
-      />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+          className="w-full px-4 py-3.5 rounded-[var(--radius)] bg-[var(--color-surface)] text-[15px] outline-none placeholder:text-[var(--color-muted)] focus:ring-2 focus:ring-[var(--color-text)]/10"
+        />
+      </div>
 
       {error && (
-        <p className="text-sm text-red-500 text-center">{error}</p>
+        <p className="text-caption text-[var(--color-danger)] text-center mb-4 animate-fade-in">
+          {error}
+        </p>
       )}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 rounded-lg bg-[var(--color-text)] text-[var(--color-surface)] text-base font-medium disabled:opacity-50 transition-opacity min-h-[44px]"
+        className="w-full py-3.5 rounded-[var(--radius)] bg-[var(--color-text)] text-white text-[15px] font-semibold min-h-[50px] active:scale-[0.98] disabled:opacity-40"
       >
-        {loading ? "..." : "sign in"}
+        {loading ? "Signing in..." : "Sign In"}
       </button>
 
-      <p className="text-sm text-[var(--color-muted)] text-center">
-        <Link href="/signup" className="underline">
-          create account
+      <p className="text-caption text-[var(--color-secondary)] text-center mt-6">
+        Don&apos;t have an account?{" "}
+        <Link href="/signup" className="text-[var(--color-text)] font-medium">
+          Create one
         </Link>
       </p>
     </form>

@@ -65,29 +65,36 @@ export function FeedClient({
   const groups = groupByWeek(workouts);
 
   return (
-    <div className="px-5 pt-14 pb-8">
-      <h1 className="text-xl font-semibold tracking-tight">entries</h1>
+    <div className="px-5 pt-[60px] pb-8 animate-fade-in-up">
+      <h1 className="text-title">entries</h1>
 
       {workouts.length === 0 ? (
-        <p className="text-sm text-[var(--color-muted)] mt-8 text-center leading-relaxed">
-          your training journal is empty.
-          <br />
-          tap + to add your first workout.
-        </p>
+        <div className="mt-24 text-center">
+          <p className="text-heading text-[var(--color-secondary)] mb-2">
+            no entries yet
+          </p>
+          <p className="text-body text-[var(--color-muted)]">
+            tap + to capture your first workout
+          </p>
+        </div>
       ) : (
-        <div className="mt-4">
-          {groups.map((group) => (
-            <div key={group.label}>
-              <p className="text-xs text-[var(--color-muted)] uppercase tracking-wider pt-4 pb-1 border-b border-[var(--color-border)]">
-                {group.label}
-              </p>
-              {group.workouts.map((w) => (
-                <WorkoutCard
-                  key={w.id}
-                  workout={w}
-                  onDelete={handleDelete}
-                />
-              ))}
+        <div className="mt-6">
+          {groups.map((group, gi) => (
+            <div key={group.label} className={gi > 0 ? "mt-2" : ""}>
+              <div className="sticky top-0 z-10 bg-[var(--color-bg)] pt-3 pb-2">
+                <p className="text-label">
+                  {group.label}
+                </p>
+              </div>
+              <div className="divide-y divide-[var(--color-separator)]">
+                {group.workouts.map((w) => (
+                  <WorkoutCard
+                    key={w.id}
+                    workout={w}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
             </div>
           ))}
         </div>

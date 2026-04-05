@@ -45,66 +45,58 @@ export function WorkoutForm({
     updateField("exercises", updated);
   }
 
+  const inputClass =
+    "w-full px-3 py-2.5 rounded-[var(--radius-sm)] bg-[var(--color-surface)] text-[15px] outline-none focus:ring-2 focus:ring-[var(--color-text)]/10 placeholder:text-[var(--color-muted)]";
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Image thumbnail */}
       {imagePreview && (
         <button
           onClick={() => setImageExpanded(!imageExpanded)}
-          className="w-full"
+          className="w-full overflow-hidden rounded-[var(--radius)]"
         >
           <img
             src={imagePreview}
             alt="Notebook page"
-            className={`w-full rounded-lg transition-all ${
-              imageExpanded ? "max-h-none" : "max-h-32 object-cover"
+            className={`w-full transition-all duration-300 ${
+              imageExpanded ? "max-h-[500px]" : "max-h-28 object-cover"
             }`}
           />
-          <p className="text-xs text-[var(--color-muted)] mt-1">
-            {imageExpanded ? "tap to collapse" : "tap to expand"}
-          </p>
         </button>
       )}
 
       {/* Flags */}
-      {workout.flags.length > 0 && (
-        <div className="space-y-1">
+      {workout.flags?.length > 0 && (
+        <div className="px-3 py-2.5 bg-amber-50 rounded-[var(--radius-sm)] space-y-1">
           {workout.flags.map((flag, i) => (
-            <p key={i} className="text-xs text-amber-600">
-              {flag}
-            </p>
+            <p key={i} className="text-caption text-amber-700">{flag}</p>
           ))}
         </div>
       )}
 
       {/* Date */}
       <div>
-        <label className="text-xs text-[var(--color-muted)] uppercase tracking-wider">
-          date
-        </label>
+        <label className="text-label mb-1.5 block">date</label>
         <input
           value={workout.date}
           onChange={(e) => updateField("date", e.target.value)}
-          className="w-full mt-1 text-base bg-transparent border-b border-[var(--color-border)] py-2 outline-none focus:border-[var(--color-text)] transition-colors"
+          className={inputClass}
         />
       </div>
 
       {/* Type + Events */}
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <label className="text-xs text-[var(--color-muted)] uppercase tracking-wider">
-            type
-          </label>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-label mb-1.5 block">type</label>
           <input
             value={workout.workout_type}
             onChange={(e) => updateField("workout_type", e.target.value)}
-            className="w-full mt-1 text-sm bg-transparent border-b border-[var(--color-border)] py-2 outline-none focus:border-[var(--color-text)] transition-colors"
+            className={inputClass}
           />
         </div>
-        <div className="flex-1">
-          <label className="text-xs text-[var(--color-muted)] uppercase tracking-wider">
-            events
-          </label>
+        <div>
+          <label className="text-label mb-1.5 block">events</label>
           <input
             value={workout.event_focus.join(", ")}
             onChange={(e) =>
@@ -113,26 +105,27 @@ export function WorkoutForm({
                 e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
               )
             }
-            className="w-full mt-1 text-sm bg-transparent border-b border-[var(--color-border)] py-2 outline-none focus:border-[var(--color-text)] transition-colors"
+            className={inputClass}
           />
         </div>
       </div>
 
       {/* Exercises */}
       <div>
-        <label className="text-xs text-[var(--color-muted)] uppercase tracking-wider">
-          exercises
-        </label>
-        <div className="mt-2 space-y-3">
+        <label className="text-label mb-2 block">exercises</label>
+        <div className="space-y-2">
           {workout.exercises.map((ex, i) => (
-            <div key={i} className="border-l-2 border-[var(--color-border)] pl-3 space-y-1">
+            <div
+              key={i}
+              className="bg-[var(--color-surface)] rounded-[var(--radius-sm)] p-3 space-y-1.5"
+            >
               <input
                 value={ex.description}
                 onChange={(e) => updateExercise(i, "description", e.target.value)}
-                className="w-full text-sm bg-transparent outline-none"
+                className="w-full text-[15px] bg-transparent outline-none font-medium"
                 placeholder="description"
               />
-              <div className="flex gap-3 text-xs text-[var(--color-muted)]">
+              <div className="flex gap-2">
                 {ex.times?.length > 0 && (
                   <input
                     value={ex.times.join(", ")}
@@ -143,7 +136,7 @@ export function WorkoutForm({
                         e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
                       )
                     }
-                    className="flex-1 bg-transparent outline-none"
+                    className="flex-1 text-caption text-[var(--color-secondary)] bg-transparent outline-none"
                     placeholder="times"
                   />
                 )}
@@ -151,7 +144,7 @@ export function WorkoutForm({
                   <input
                     value={ex.rest}
                     onChange={(e) => updateExercise(i, "rest", e.target.value)}
-                    className="w-20 bg-transparent outline-none"
+                    className="w-20 text-caption text-[var(--color-muted)] bg-transparent outline-none text-right"
                     placeholder="rest"
                   />
                 )}
@@ -162,12 +155,10 @@ export function WorkoutForm({
       </div>
 
       {/* Technical Cues */}
-      {workout.technical_cues.length > 0 && (
+      {workout.technical_cues?.length > 0 && (
         <div>
-          <label className="text-xs text-[var(--color-muted)] uppercase tracking-wider">
-            cues
-          </label>
-          <div className="mt-1 space-y-1">
+          <label className="text-label mb-1.5 block">cues</label>
+          <div className="bg-[var(--color-surface)] rounded-[var(--radius-sm)] p-3 space-y-1">
             {workout.technical_cues.map((cue, i) => (
               <input
                 key={i}
@@ -177,7 +168,7 @@ export function WorkoutForm({
                   updated[i] = e.target.value;
                   updateField("technical_cues", updated);
                 }}
-                className="w-full text-sm text-[var(--color-muted)] bg-transparent outline-none"
+                className="w-full text-caption text-[var(--color-secondary)] bg-transparent outline-none"
               />
             ))}
           </div>
@@ -186,15 +177,13 @@ export function WorkoutForm({
 
       {/* Personal Notes */}
       <div>
-        <label className="text-xs text-[var(--color-muted)] uppercase tracking-wider">
-          notes
-        </label>
+        <label className="text-label mb-1.5 block">notes</label>
         <textarea
           value={workout.personal_notes || ""}
           onChange={(e) => updateField("personal_notes", e.target.value || null)}
-          rows={2}
-          className="w-full mt-1 text-sm bg-transparent border-b border-[var(--color-border)] py-2 outline-none focus:border-[var(--color-text)] transition-colors resize-none"
-          placeholder="how did it feel?"
+          rows={3}
+          className={`${inputClass} resize-none`}
+          placeholder="How did it feel?"
         />
       </div>
 
@@ -202,9 +191,9 @@ export function WorkoutForm({
       <button
         onClick={onSave}
         disabled={saving}
-        className="w-full py-3 rounded-lg bg-[var(--color-text)] text-[var(--color-surface)] text-base font-medium disabled:opacity-50 transition-opacity min-h-[44px]"
+        className="w-full py-3.5 rounded-[var(--radius)] bg-[var(--color-text)] text-white text-[15px] font-semibold min-h-[50px] active:scale-[0.98] disabled:opacity-40"
       >
-        {saving ? "saving..." : "save"}
+        {saving ? "Saving..." : "Save Entry"}
       </button>
     </div>
   );

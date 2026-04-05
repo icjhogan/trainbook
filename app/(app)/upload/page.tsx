@@ -96,7 +96,7 @@ export default function UploadPage() {
       setToast("workout saved");
 
       if (remaining.length === 0) {
-        setTimeout(() => router.push("/feed"), 1500);
+        setTimeout(() => router.push("/feed"), 1200);
       }
     } catch (err: any) {
       setError(err.message);
@@ -110,34 +110,39 @@ export default function UploadPage() {
     if (file) handleFile(file);
   }
 
+  // Loading state
   if (state === "uploading" || state === "extracting") {
     return (
-      <div className="px-5 pt-14 flex flex-col items-center justify-center min-h-[60dvh]">
-        <p className="text-sm text-[var(--color-muted)] animate-pulse">
-          {state === "uploading" ? "uploading..." : "reading your notes..."}
-        </p>
+      <div className="px-5 pt-[60px] flex flex-col items-center justify-center min-h-[70dvh] animate-fade-in">
         {imagePreview && (
           <img
             src={imagePreview}
             alt="Preview"
-            className="mt-6 w-48 rounded-lg opacity-60"
+            className="w-40 rounded-[var(--radius)] shadow-sm opacity-80"
           />
         )}
+        <p className="text-body text-[var(--color-secondary)] mt-6 animate-pulse-soft">
+          {state === "uploading" ? "Uploading image..." : "Reading your notes..."}
+        </p>
       </div>
     );
   }
 
+  // Confirm state
   if (state === "confirm") {
     return (
-      <div className="px-5 pt-14 pb-8">
-        <h1 className="text-xl font-semibold tracking-tight mb-6">
+      <div className="px-5 pt-[60px] pb-8 animate-fade-in-up">
+        <h1 className="text-title mb-8">
           {workouts.length === 1
-            ? "confirm entry"
-            : `confirm ${workouts.length} entries`}
+            ? "Confirm entry"
+            : `Confirm ${workouts.length} entries`}
         </h1>
 
         {workouts.map((w, i) => (
-          <div key={i} className={i > 0 ? "mt-10 pt-10 border-t border-[var(--color-border)]" : ""}>
+          <div
+            key={i}
+            className={i > 0 ? "mt-10 pt-10 border-t border-[var(--color-separator)]" : ""}
+          >
             <WorkoutForm
               workout={w}
               imagePreview={imagePreview}
@@ -157,11 +162,16 @@ export default function UploadPage() {
     );
   }
 
+  // Capture state
   return (
-    <div className="px-5 pt-14">
-      <h1 className="text-xl font-semibold tracking-tight mb-8">add entry</h1>
+    <div className="px-5 pt-[60px] animate-fade-in-up">
+      <h1 className="text-title mb-10">Add entry</h1>
 
-      {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+      {error && (
+        <div className="mb-6 px-4 py-3 bg-red-50 rounded-[var(--radius-sm)] animate-fade-in">
+          <p className="text-caption text-[var(--color-danger)]">{error}</p>
+        </div>
+      )}
 
       <input
         ref={cameraRef}
@@ -182,15 +192,15 @@ export default function UploadPage() {
       <div className="space-y-3">
         <button
           onClick={() => cameraRef.current?.click()}
-          className="w-full py-4 text-base text-center border border-[var(--color-border)] rounded-lg min-h-[44px] active:bg-[var(--color-border)] transition-colors"
+          className="w-full py-4 text-[15px] font-medium text-center bg-[var(--color-text)] text-white rounded-[var(--radius)] min-h-[50px] active:scale-[0.98]"
         >
-          take a photo
+          Take a photo
         </button>
         <button
           onClick={() => fileRef.current?.click()}
-          className="w-full py-4 text-base text-center text-[var(--color-muted)] min-h-[44px] active:opacity-50 transition-opacity"
+          className="w-full py-4 text-[15px] text-center text-[var(--color-secondary)] rounded-[var(--radius)] min-h-[50px] active:bg-[var(--color-surface)]"
         >
-          choose from library
+          Choose from library
         </button>
       </div>
 

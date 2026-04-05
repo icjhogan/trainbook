@@ -11,7 +11,7 @@ interface ToastProps {
 export function Toast({ message, visible, onDone }: ToastProps) {
   useEffect(() => {
     if (visible) {
-      const timer = setTimeout(onDone, 2000);
+      const timer = setTimeout(onDone, 2200);
       return () => clearTimeout(timer);
     }
   }, [visible, onDone]);
@@ -19,7 +19,7 @@ export function Toast({ message, visible, onDone }: ToastProps) {
   if (!visible) return null;
 
   return (
-    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[var(--color-text)] text-[var(--color-surface)] text-sm rounded-full animate-fade-in">
+    <div className="fixed top-[max(12px,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-[60] px-5 py-2.5 bg-[var(--color-text)] text-white text-[13px] font-medium rounded-full shadow-lg animate-fade-in tracking-wide">
       {message}
     </div>
   );
