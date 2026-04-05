@@ -60,19 +60,26 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
     setLoadingChats(false);
   }, [supabase]);
 
+  const hasHandledAttachment = useRef(false);
+
   useEffect(() => {
-    if (open) {
-      // If opening with an attached workout, go straight to a new thread
-      if (attachedWorkout) {
-        startNewChat().then(() => {
-          // Auto-focus input so she can type her question
-        });
-        return;
-      }
-      loadChats();
-      if (!activeChatId) setView("list");
+    if (!open) {
+      hasHandledAttachment.current = false;
+      return;
     }
-  }, [open, loadChats, activeChatId, attachedWorkout]);
+
+    // If opening with an attached workout, create one new thread
+    if (attachedWorkout && !hasHandledAttachment.current) {
+      hasHandledAttachment.current = true;
+      startNewChat();
+      return;
+    }
+
+    // Normal open — show chat list
+    loadChats();
+    if (!activeChatId) setView("list");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Auto-scroll
   useEffect(() => {
