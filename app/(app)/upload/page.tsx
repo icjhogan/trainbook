@@ -4,9 +4,22 @@ import { createClient } from "@/lib/supabase/client";
 import { uploadWorkoutImage } from "@/lib/supabase/storage";
 import { WorkoutForm } from "@/components/workout-form";
 import { Toast } from "@/components/toast";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Exercise } from "@/lib/types";
+
+const LOADING_MESSAGES = [
+  "Reading your handwriting...",
+  "Deciphering those splits...",
+  "Figuring out the rest intervals...",
+  "Parsing your coaching cues...",
+  "Almost got it...",
+  "Recognizing the workout structure...",
+  "Extracting the details...",
+  "Making sense of the margins...",
+  "Spotting the technical notes...",
+  "Translating notebook to data...",
+];
 
 interface ExtractedWorkout {
   date: string;
@@ -30,10 +43,21 @@ export default function UploadPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+  const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
   const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    if (state !== "extracting") return;
+    let i = 0;
+    const interval = setInterval(() => {
+      i = (i + 1) % LOADING_MESSAGES.length;
+      setLoadingMsg(LOADING_MESSAGES[i]);
+    }, 2800);
+    return () => clearInterval(interval);
+  }, [state]);
 
   async function handleFile(file: File) {
     setImagePreview(URL.createObjectURL(file));
@@ -121,8 +145,11 @@ export default function UploadPage() {
             className="w-40 rounded-[var(--radius)] shadow-sm opacity-80"
           />
         )}
-        <p className="text-body text-[var(--color-secondary)] mt-6 animate-pulse-soft">
-          {state === "uploading" ? "Uploading image..." : "Reading your notes..."}
+        <p
+          key={state === "uploading" ? "uploading" : loadingMsg}
+          className="text-body text-[var(--color-secondary)] mt-6 animate-fade-in"
+        >
+          {state === "uploading" ? "Uploading..." : loadingMsg}
         </p>
       </div>
     );
