@@ -52,7 +52,7 @@ export function ChatPanel() {
       {/* Trigger */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-[calc(58px+env(safe-area-inset-bottom))] right-5 z-30 w-[38px] h-[38px] rounded-full bg-[var(--color-text)] text-white flex items-center justify-center shadow-md active:scale-90 transition-transform"
+        className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-5 z-30 w-[38px] h-[38px] rounded-full bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] flex items-center justify-center shadow-sm active:scale-90 transition-transform"
         aria-label="Open chat"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
