@@ -6,7 +6,7 @@ For EACH workout on this page, extract a JSON object with these fields:
 
 {
   "date": "the date as written (e.g. 'Wednesday, November 12th')",
-  "date_iso": "best-guess ISO date (YYYY-MM-DD) if you can infer the year, otherwise YYYY-MM-DD with best guess",
+  "date_iso": "ISO date (YYYY-MM-DD) — assume the current year (${new Date().getFullYear()}) unless the text clearly indicates otherwise",
   "workout_type": "the type/category (e.g. 'Tempo', 'Extensive Tempo', 'Intensive Tempo', 'Speed', 'High Jump', 'Long Jump', 'Hurdles', 'Meet', 'Practice', etc.)",
   "event_focus": ["array of event focuses if identifiable (e.g. 'High Jump', 'Long Jump', '200m', 'Hurdles', 'Sprints')"],
   "exercises": [

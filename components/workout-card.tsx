@@ -33,7 +33,6 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
 
   const exercisePreview = workout.exercises?.slice(0, 2) || [];
   const hasMore = (workout.exercises?.length || 0) > 2;
-  const hasFlags = workout.flags?.length > 0;
 
   async function handleSave() {
     setSaving(true);
@@ -90,14 +89,9 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
       className="py-4 active:bg-[var(--color-surface)] -mx-5 px-5 transition-colors rounded-lg cursor-pointer"
     >
       {/* Header */}
-      <div className="flex items-baseline justify-between">
-        <h3 className="text-subheading">
-          {workout.date}
-        </h3>
-        {hasFlags && (
-          <span className="w-[6px] h-[6px] rounded-full bg-amber-400 flex-shrink-0" />
-        )}
-      </div>
+      <h3 className="text-subheading">
+        {workout.date}
+      </h3>
 
       <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
         <WorkoutPill label={workout.workout_type} kind="type" />
@@ -190,15 +184,6 @@ export function WorkoutCard({ workout, onDelete, onUpdate }: WorkoutCardProps) {
               <p className="text-body italic text-[var(--color-secondary)]">
                 {workout.personal_notes}
               </p>
-            </div>
-          )}
-
-          {/* Flags */}
-          {hasFlags && (
-            <div className="space-y-1 py-2 px-3 bg-[#3d2e0a] rounded-[var(--radius-sm)]">
-              {workout.flags.map((flag, i) => (
-                <p key={i} className="text-caption text-[#f0c340]">{flag}</p>
-              ))}
             </div>
           )}
 
