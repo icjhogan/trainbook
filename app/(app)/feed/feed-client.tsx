@@ -72,7 +72,7 @@ export function FeedClient({
   const [workouts, setWorkouts] = useState(initialWorkouts);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [toast, setToast] = useState("");
-  const { isSearching, query, setQuery } = useSearch();
+  const { isSearching, query, setQuery, setIsSearching } = useSearch();
   const openChat = useChatOpener();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
@@ -117,51 +117,64 @@ export function FeedClient({
   if (isSearching) {
     return (
       <div className="px-5 pt-4 pb-8 animate-fade-in">
-        {/* Search input */}
-        <div className="relative mb-4">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--color-muted)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            className="absolute left-3 top-1/2 -translate-y-1/2"
+        {/* Search header */}
+        <div className="flex items-center gap-3 mb-5">
+          <button
+            onClick={() => { setIsSearching(false); setQuery(""); }}
+            className="w-[34px] h-[34px] flex items-center justify-center rounded-full glass-button active:scale-90 transition-transform flex-shrink-0"
+            aria-label="Back"
           >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            ref={searchInputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search workouts..."
-            className="w-full pl-10 pr-4 py-3 rounded-[var(--radius)] glass-input text-[15px] outline-none placeholder:text-[var(--color-muted)]"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-[20px] h-[20px] rounded-full bg-[var(--color-border)] flex items-center justify-center"
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <div className="relative flex-1">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--color-muted)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              className="absolute left-3 top-1/2 -translate-y-1/2"
             >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" strokeWidth="3" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          )}
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              ref={searchInputRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search workouts..."
+              className="w-full pl-9 pr-9 py-2.5 rounded-full glass-input text-[15px] outline-none placeholder:text-[var(--color-muted)]"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] rounded-full bg-[var(--color-muted)]/30 flex items-center justify-center"
+              >
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" strokeWidth="3" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Quick filters */}
-        <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1 -mx-5 px-5">
+        <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1 -mx-5 px-5">
           {[
             { label: "Tempo", kind: "type" as const },
             { label: "Practice", kind: "type" as const },
             { label: "Meet", kind: "type" as const },
+            { label: "Lift", kind: "type" as const },
             { label: "High Jump", kind: "event" as const },
             { label: "Hurdles", kind: "event" as const },
             { label: "Long Jump", kind: "event" as const },
-            { label: "Lift", kind: "type" as const },
+            { label: "Shot Put", kind: "event" as const },
+            { label: "Javelin", kind: "event" as const },
           ].map(({ label, kind }) => {
             const isActive = query.toLowerCase() === label.toLowerCase();
             const color = kind === "type" ? getTypeColor(label) : getEventColor(label);
@@ -169,10 +182,10 @@ export function FeedClient({
               <button
                 key={label}
                 onClick={() => setQuery(isActive ? "" : label)}
-                className="flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all active:scale-95"
+                className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all active:scale-95"
                 style={
                   isActive
-                    ? { backgroundColor: color.text, color: "#fff" }
+                    ? { backgroundColor: color.text, color: "#191919" }
                     : { backgroundColor: color.bg, color: color.text }
                 }
               >
@@ -182,29 +195,37 @@ export function FeedClient({
           })}
         </div>
 
-        {/* Results count */}
-        <p className="text-caption text-[var(--color-muted)] mb-2">
-          {filteredWorkouts.length} result{filteredWorkouts.length !== 1 ? "s" : ""}
-        </p>
-
-        {/* Compact results */}
-        <div className="space-y-0.5">
-          {filteredWorkouts.map((w) => (
-            <WorkoutRow
-              key={w.id}
-              workout={w}
-              highlight={query}
-              onTap={(id) => {
-                setExpandedId(id === expandedId ? null : id);
-              }}
-            />
-          ))}
-        </div>
-
-        {filteredWorkouts.length === 0 && query && (
-          <div className="mt-12 text-center">
-            <p className="text-body text-[var(--color-muted)]">
-              no matches for &ldquo;{query}&rdquo;
+        {/* Results */}
+        {query ? (
+          <>
+            <p className="text-[12px] text-[var(--color-muted)] mb-3">
+              {filteredWorkouts.length} result{filteredWorkouts.length !== 1 ? "s" : ""}
+            </p>
+            <div className="space-y-1">
+              {filteredWorkouts.map((w) => (
+                <WorkoutRow
+                  key={w.id}
+                  workout={w}
+                  highlight={query}
+                  onTap={(id) => {
+                    setExpandedId(id === expandedId ? null : id);
+                  }}
+                />
+              ))}
+            </div>
+            {filteredWorkouts.length === 0 && (
+              <div className="mt-16 text-center">
+                <p className="text-[14px] text-[var(--color-muted)]">
+                  No results for &ldquo;{query}&rdquo;
+                </p>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Empty state — show recent when no query */
+          <div className="mt-10 text-center">
+            <p className="text-[14px] text-[var(--color-muted)]">
+              Search by date, workout type, event, or notes
             </p>
           </div>
         )}
