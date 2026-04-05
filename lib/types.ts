@@ -21,6 +21,7 @@ export interface Workout {
   raw_text: string;
   flags: string[];
   image_path: string | null;
+  embedding: number[] | null;
   created_at: string;
   updated_at: string;
 }
