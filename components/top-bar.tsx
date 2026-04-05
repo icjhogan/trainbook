@@ -63,20 +63,20 @@ export function TopBar() {
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center justify-center min-h-[44px] min-w-[44px] -mr-2 active:opacity-50 transition-opacity"
+            className="flex items-center justify-center w-[34px] h-[34px] rounded-full bg-[var(--color-surface-raised)] border border-[var(--color-border)] active:scale-90 transition-transform"
           >
             <svg
-              width="20"
-              height="20"
+              width="16"
+              height="16"
               viewBox="0 0 24 24"
               fill="none"
               stroke="var(--color-secondary)"
               strokeWidth="2"
               strokeLinecap="round"
             >
-              <circle cx="12" cy="5" r="1" />
-              <circle cx="12" cy="12" r="1" />
-              <circle cx="12" cy="19" r="1" />
+              <circle cx="5" cy="12" r="1.5" fill="var(--color-secondary)" />
+              <circle cx="12" cy="12" r="1.5" fill="var(--color-secondary)" />
+              <circle cx="19" cy="12" r="1.5" fill="var(--color-secondary)" />
             </svg>
           </button>
 
