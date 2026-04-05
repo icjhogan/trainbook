@@ -9,43 +9,43 @@ interface BottomNavProps {
 
 export function BottomNav({ onOpenChat, onOpenSearch }: BottomNavProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pb-[calc(8px+env(safe-area-inset-bottom))] px-5 pointer-events-none">
-      <nav className="flex items-center gap-1 h-[44px] px-1.5 rounded-full bg-[var(--color-text)]/90 backdrop-blur-xl shadow-[0_2px_20px_rgba(0,0,0,0.15)] pointer-events-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-40 pb-[calc(10px+env(safe-area-inset-bottom))] px-4 pointer-events-none">
+      <div className="flex items-end gap-2 max-w-[430px] mx-auto">
         {/* Search */}
         <button
           onClick={onOpenSearch}
-          className="flex items-center justify-center w-[36px] h-[36px] rounded-full text-white/50 active:bg-white/10 active:scale-90 transition-all"
+          className="flex items-center justify-center w-[44px] h-[44px] rounded-full bg-[var(--color-text)]/90 backdrop-blur-xl shadow-[0_2px_16px_rgba(0,0,0,0.12)] text-white/60 active:scale-90 transition-all pointer-events-auto"
           aria-label="Search"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
         </button>
 
-        {/* Ask AI */}
+        {/* Ask AI — main element */}
         <button
           onClick={onOpenChat}
-          className="flex items-center justify-center h-[36px] px-4 gap-1.5 rounded-full bg-white/15 active:bg-white/25 active:scale-95 transition-all"
+          className="flex-1 flex items-center h-[44px] px-4 gap-2.5 rounded-full bg-[var(--color-text)]/90 backdrop-blur-xl shadow-[0_2px_16px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-all pointer-events-auto"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 3a9 9 0 0 1 9 9 9 9 0 0 1-9 9 9.005 9.005 0 0 1-7.2-3.6L3 21l2.4-4.8A9 9 0 0 1 12 3z" />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 opacity-60">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
           </svg>
-          <span className="text-[13px] text-white font-medium">Ask AI</span>
+          <span className="text-[14px] text-white/40 font-normal">Ask about your training...</span>
         </button>
 
         {/* New entry */}
         <Link
           href="/upload"
-          className="flex items-center justify-center w-[36px] h-[36px] rounded-full text-white/50 active:bg-white/10 active:scale-90 transition-all"
+          className="flex items-center justify-center w-[44px] h-[44px] rounded-full bg-[var(--color-text)]/90 backdrop-blur-xl shadow-[0_2px_16px_rgba(0,0,0,0.12)] text-white/60 active:scale-90 transition-all pointer-events-auto"
           aria-label="New entry"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </Link>
-      </nav>
+      </div>
     </div>
   );
 }
