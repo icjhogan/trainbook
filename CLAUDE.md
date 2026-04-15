@@ -40,7 +40,7 @@ Next.js 16 App Router + Supabase (auth, Postgres, Storage) + Anthropic SDK + Ver
 
 ## Supabase
 
-- Project ID: `wbmsjcuuzmpuntthbuep`
 - Tables: `workouts`, `chats`, `chat_messages`
 - Storage bucket: `workout-images`
 - All tables have RLS scoped to `auth.uid()`
+- Migrations in `supabase/migrations/` — run against your own project
