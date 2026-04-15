@@ -109,7 +109,7 @@ Row-level security ensures users only access their own data. Chat threads persis
 
 ```bash
 # Clone
-git clone https://github.com/yourusername/trainbook.git
+git clone https://github.com/icjhogan/trainbook.git
 cd trainbook
 
 # Install
