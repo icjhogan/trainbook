@@ -27,4 +27,12 @@ describe("selectUnpersisted", () => {
     const persisted = new Set(["u1", "a1"]);
     expect(selectUnpersisted(messages, persisted)).toEqual([msg("u2"), msg("a2")]);
   });
+
+  it("does not skip a genuinely new message that shares no id, even if a duplicate id appears", () => {
+    // Defensive: if the SDK ever reused an id, the already-persisted one is correctly skipped
+    // and only the unpersisted id passes through.
+    const messages = [msg("dup"), msg("new")];
+    const persisted = new Set(["dup"]);
+    expect(selectUnpersisted(messages, persisted)).toEqual([msg("new")]);
+  });
 });

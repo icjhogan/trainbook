@@ -160,6 +160,16 @@ describe("buildSummary", () => {
     ).toBe("Mon: Speed. 4x300 (times: 45, 46)");
   });
 
+  it("appends an exercise line without a times suffix when there are no times", () => {
+    expect(
+      buildSummary({
+        date: "Mon",
+        workout_type: "Speed",
+        exercises: [exercise({ description: "4x300" })],
+      }),
+    ).toBe("Mon: Speed. 4x300");
+  });
+
   it("appends cues and notes", () => {
     expect(
       buildSummary({
@@ -174,9 +184,9 @@ describe("buildSummary", () => {
 
 describe("searchWorkouts", () => {
   const ws = [
-    workout({ id: "1", workout_type: "Tempo", raw_text: "easy aerobic" }),
-    workout({ id: "2", workout_type: "Speed", exercises: [exercise({ description: "flying 30s" })] }),
-    workout({ id: "3", workout_type: "Hurdles", personal_notes: "left lead leg" }),
+    workout({ id: "1", date: "Mon, Nov 10", workout_type: "Tempo", raw_text: "easy aerobic" }),
+    workout({ id: "2", date: "Tue, Nov 11", workout_type: "Speed", exercises: [exercise({ description: "flying 30s" })] }),
+    workout({ id: "3", date: "Wed, Nov 12", workout_type: "Hurdles", personal_notes: "left lead leg", event_focus: ["100mH"], technical_cues: ["snap the trail leg"] }),
   ];
 
   it("returns all workouts for an empty query", () => {
@@ -194,6 +204,22 @@ describe("searchWorkouts", () => {
 
   it("matches inside an exercise description only", () => {
     expect(searchWorkouts(ws, "flying").map((w) => w.id)).toEqual(["2"]);
+  });
+
+  it("matches inside personal_notes", () => {
+    expect(searchWorkouts(ws, "lead").map((w) => w.id)).toEqual(["3"]);
+  });
+
+  it("matches inside event_focus", () => {
+    expect(searchWorkouts(ws, "100mh").map((w) => w.id)).toEqual(["3"]);
+  });
+
+  it("matches inside technical_cues", () => {
+    expect(searchWorkouts(ws, "trail leg").map((w) => w.id)).toEqual(["3"]);
+  });
+
+  it("matches inside the date field", () => {
+    expect(searchWorkouts(ws, "nov 10").map((w) => w.id)).toEqual(["1"]);
   });
 
   it("returns nothing when no field matches", () => {

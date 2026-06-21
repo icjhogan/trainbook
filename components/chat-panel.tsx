@@ -55,16 +55,20 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
       api: "/api/chat",
       body: { chatId: activeChatId },
     }),
+    // Surface 429 (rate limited), 400 (bad/oversized request), and mid-stream
+    // failures instead of leaving the input frozen with no feedback.
+    onError: (err) => setToast(err.message || "Something went wrong"),
   });
 
   const isLoading = status === "submitted" || status === "streaming";
 
   // Load chat list
   const loadChats = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("chats")
       .select("id, title, updated_at")
       .order("updated_at", { ascending: false });
+    if (error) setToast("Couldn't load chats");
     setChats(data || []);
     setLoadingChats(false);
   }, [supabase]);
@@ -155,14 +159,22 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   }
 
   async function openChat(chatId: string) {
+    // Don't switch threads mid-stream: openChat replaces the useChat message store and
+    // the persisted-id set, which would tear the in-flight stream out from under itself.
+    if (isLoading) return;
     setActiveChatId(chatId);
 
     // Load messages
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("chat_messages")
       .select("*")
       .eq("chat_id", chatId)
       .order("created_at", { ascending: true });
+
+    if (error) {
+      setToast("Couldn't load chat");
+      return;
+    }
 
     const saved = (data || []) as SavedMessage[];
 
@@ -183,6 +195,8 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   }
 
   async function startNewChat() {
+    // Don't start/switch threads mid-stream (would orphan the in-flight turn).
+    if (isLoading) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 

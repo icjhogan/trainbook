@@ -4,9 +4,11 @@ import { rateLimit, __resetRateLimits } from "./rate-limit";
 beforeEach(() => __resetRateLimits());
 
 describe("rateLimit", () => {
-  it("allows requests up to the limit", () => {
+  it("allows requests up to the limit and reports zero retry-after", () => {
     for (let i = 0; i < 3; i++) {
-      expect(rateLimit("k", 3, 1000, 0).ok).toBe(true);
+      const res = rateLimit("k", 3, 1000, 0);
+      expect(res.ok).toBe(true);
+      expect(res.retryAfterSeconds).toBe(0);
     }
   });
 
