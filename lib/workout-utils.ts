@@ -45,7 +45,21 @@ export function formatDateLabel(dateIso: string): string {
     weekday: "long",
     month: "long",
     day: "numeric",
+    year: "numeric",
   });
+}
+
+// Default date_iso for a new manual entry: the last-saved date (sticky), else the backfill
+// anchor year (only when it's a real 4-digit year — guards against partial/garbage input
+// like "5" or "20255" producing an unsortable date), else today.
+export function resolveEntryDateIso(
+  carryDate: string,
+  anchorYear: string,
+  today: string,
+): string {
+  if (isValidDateIso(carryDate)) return carryDate;
+  if (/^\d{4}$/.test(anchorYear.trim())) return `${anchorYear.trim()}-01-01`;
+  return today;
 }
 
 // Monday-anchored ISO week key (e.g. "2025-11-10"). Single source of truth —

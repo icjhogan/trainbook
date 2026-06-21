@@ -14,12 +14,19 @@ export interface ParsedShorthand {
   exercises: Exercise[];
 }
 
-function emptyExercise(description: string): Exercise {
+export function emptyExercise(description = ""): Exercise {
   return { description, distance: null, reps: null, sets: null, times: [], rest: null, notes: null };
 }
 
-function meters(n: string): string {
-  return `${parseInt(n, 10)}m`;
+// Parse a digit run to a sane non-negative integer, or null if absurd (so a 21-digit token
+// can't become a 1e21 float persisted as reps/sets/distance). Out-of-range -> description-only.
+function safeInt(s: string): number | null {
+  const n = parseInt(s, 10);
+  return Number.isSafeInteger(n) && n >= 0 && n <= 100000 ? n : null;
+}
+
+function meters(n: number): string {
+  return `${n}m`;
 }
 
 // Parse a compact shorthand string (one workout's worth) into structured exercises.
@@ -81,32 +88,43 @@ function parseSegment(segment: string): Exercise {
   // sets x reps x distance, or reps x distance
   const xForm = left.match(/^(\d+)\s*x\s*(\d+)(?:\s*x\s*(\d+))?/i);
   if (xForm) {
-    if (xForm[3]) {
-      ex.sets = parseInt(xForm[1], 10);
-      ex.reps = parseInt(xForm[2], 10);
-      ex.distance = meters(xForm[3]);
-    } else {
-      ex.reps = parseInt(xForm[1], 10);
-      ex.distance = meters(xForm[2]);
+    const a = safeInt(xForm[1]);
+    const b = safeInt(xForm[2]);
+    const c = xForm[3] ? safeInt(xForm[3]) : undefined;
+    if (a !== null && b !== null && (xForm[3] ? c != null : true)) {
+      if (xForm[3] && c != null) {
+        ex.sets = a;
+        ex.reps = b;
+        ex.distance = meters(c);
+      } else {
+        ex.reps = a;
+        ex.distance = meters(b);
+      }
+      return ex;
     }
-    return ex;
+    // oversized numbers -> fall through to description-only (lossless)
   }
 
   // combo distance: number (+ number)+ , each optionally suffixed with m
   const combo = left.match(/^\d+\s*m?(?:\s*\+\s*\d+\s*m?)+/i);
   if (combo) {
-    const nums = combo[0].match(/\d+/g) || [];
-    ex.distance = nums.map(meters).join(" + ");
-    ex.reps = 1;
-    return ex;
+    const nums = (combo[0].match(/\d+/g) || []).map(safeInt);
+    if (nums.length > 0 && nums.every((n) => n !== null)) {
+      ex.distance = nums.map((n) => meters(n as number)).join(" + ");
+      ex.reps = 1;
+      return ex;
+    }
   }
 
   // single distance: a bare number (optionally s/m) that is the entire left part
   const single = left.match(/^(\d+)\s*[sm]?$/i);
   if (single) {
-    ex.distance = meters(single[1]);
-    ex.reps = 1;
-    return ex;
+    const n = safeInt(single[1]);
+    if (n !== null) {
+      ex.distance = meters(n);
+      ex.reps = 1;
+      return ex;
+    }
   }
 
   // otherwise: description-only (lossless)

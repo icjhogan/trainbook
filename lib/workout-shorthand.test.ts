@@ -71,6 +71,24 @@ describe("parseWorkoutShorthand", () => {
     expect(exercises[0].reps).toBeNull();
   });
 
+  it("extracts a parenthetical aside into notes", () => {
+    const { exercises } = parseWorkoutShorthand("4x300 @55 (felt strong)");
+    expect(exercises[0]).toMatchObject({ reps: 4, distance: "300m", notes: "felt strong" });
+  });
+
+  it("splits on newlines as well as semicolons", () => {
+    const { exercises } = parseWorkoutShorthand("4x300 @55\n2x150 @19");
+    expect(exercises).toHaveLength(2);
+  });
+
+  it("treats an absurd digit run as description-only, not a degenerate number", () => {
+    const huge = "9".repeat(21);
+    const { exercises } = parseWorkoutShorthand(`${huge} @55`);
+    expect(exercises[0].distance).toBeNull();
+    expect(exercises[0].reps).toBeNull();
+    expect(exercises[0].description).toContain(huge);
+  });
+
   it("returns no exercises for empty input, no throw", () => {
     expect(parseWorkoutShorthand("").exercises).toEqual([]);
     expect(parseWorkoutShorthand("   ").exercises).toEqual([]);

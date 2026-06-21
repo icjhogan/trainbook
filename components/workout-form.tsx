@@ -45,6 +45,9 @@ export function WorkoutForm({
   }
 
   function updateExercise<K extends keyof Exercise>(index: number, field: K, value: Exercise[K]) {
+    // Once the user fine-tunes a parsed exercise, clear the shorthand box so a later
+    // keystroke there can't silently re-parse and discard these manual edits.
+    if (shorthand) setShorthand("");
     const updated = [...workout.exercises];
     updated[index] = { ...updated[index], [field]: value };
     updateField("exercises", updated);

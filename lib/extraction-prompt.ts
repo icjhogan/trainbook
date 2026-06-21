@@ -2,7 +2,10 @@
 // backfill doesn't get misdated: with an anchor year, undated pages resolve to it; without
 // one, the model is told NOT to assume the current year and to flag year uncertainty.
 export function buildExtractionPrompt(anchorYear?: number | string): string {
-  const year = anchorYear ? String(anchorYear).trim() : "";
+  // Defense in depth: only a real 4-digit year is used; anything else falls back to the
+  // no-assumption variant (also blocks prompt-injection if an unvalidated value ever reaches here).
+  const raw = anchorYear != null ? String(anchorYear).trim() : "";
+  const year = /^\d{4}$/.test(raw) ? raw : "";
   const yearGuidance = year
     ? `These pages are from ${year}. Resolve any date without an explicit year to ${year}, unless the page clearly states a different year.`
     : `Do NOT assume the current year. If a date has no explicit year written on the page, infer it from context where possible; if you cannot determine the year, add a note such as "year uncertain" to the flags array.`;

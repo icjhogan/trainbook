@@ -7,11 +7,8 @@ import { Toast } from "@/components/toast";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { ExtractedWorkout } from "@/lib/types";
-import { formatDateLabel } from "@/lib/workout-utils";
-
-function emptyExercise() {
-  return { description: "", distance: null, reps: null, sets: null, times: [], rest: null, notes: null };
-}
+import { formatDateLabel, isValidDateIso, resolveEntryDateIso } from "@/lib/workout-utils";
+import { emptyExercise } from "@/lib/workout-shorthand";
 
 const LOADING_MESSAGES = [
   "Reading your handwriting...",
@@ -56,8 +53,7 @@ export default function UploadPage() {
   // today); workout type and events carried forward from the last manual save.
   function blankManualWorkout(): ExtractedWorkout {
     const c = carryRef.current;
-    const dateIso =
-      c.date_iso || (anchorYear ? `${anchorYear}-01-01` : new Date().toISOString().slice(0, 10));
+    const dateIso = resolveEntryDateIso(c.date_iso, anchorYear, new Date().toISOString().slice(0, 10));
     return {
       date: formatDateLabel(dateIso),
       date_iso: dateIso,
@@ -116,12 +112,18 @@ export default function UploadPage() {
   }
 
   async function handleSave(index: number) {
+    if (saving) return; // guard against double-submit in the rapid-repeat loop
+    const workout = workouts[index];
+    // Block saving an unsortable date — it would persist but vanish from the feed.
+    if (!isValidDateIso(workout.date_iso)) {
+      setToast("Pick a valid date before saving");
+      return;
+    }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const workout = workouts[index];
       const { error } = await supabase.from("workouts").insert({
         user_id: user.id,
         date: workout.date,
@@ -138,23 +140,19 @@ export default function UploadPage() {
 
       if (error) throw error;
 
+      // Carry the confirmed date/type/events forward for the next entry (either mode).
+      carryRef.current = {
+        date_iso: workout.date_iso,
+        workout_type: workout.workout_type,
+        event_focus: workout.event_focus,
+      };
+
       if (entryMode === "manual") {
-        // Rapid-repeat: carry date/type/events forward and present a fresh entry in place.
-        carryRef.current = {
-          date_iso: workout.date_iso,
-          workout_type: workout.workout_type,
-          event_focus: workout.event_focus,
-        };
+        // Rapid-repeat: present a fresh entry in place.
         setEntryKey((k) => k + 1);
         setWorkouts([blankManualWorkout()]);
         setToast("saved — next entry");
       } else {
-        // Remember the confirmed details so a following entry can default to them.
-        carryRef.current = {
-          date_iso: workout.date_iso,
-          workout_type: workout.workout_type,
-          event_focus: workout.event_focus,
-        };
         const remaining = workouts.filter((_, i) => i !== index);
         setWorkouts(remaining);
         setToast("workout saved");
