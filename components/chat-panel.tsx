@@ -33,7 +33,6 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   const [view, setView] = useState<View>("list");
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [initialMessages, setInitialMessages] = useState<SavedMessage[]>([]);
   const [loadingChats, setLoadingChats] = useState(true);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -166,7 +165,6 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
       .order("created_at", { ascending: true });
 
     const saved = (data || []) as SavedMessage[];
-    setInitialMessages(saved);
 
     // Convert to useChat format
     setMessages(
@@ -197,7 +195,6 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
     if (data) {
       setActiveChatId(data.id);
       setMessages([]);
-      setInitialMessages([]);
       persistedIds.current = new Set();
       streamingChatId.current = data.id;
       setView("thread");
@@ -259,7 +256,7 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
     if (attachedWorkout && messages.length === 0) {
       const w = attachedWorkout;
       const exercises = (w.exercises || [])
-        .map((ex: any) => {
+        .map((ex) => {
           let line = ex.description;
           if (ex.times?.length) line += ` (${ex.times.join(", ")})`;
           return `- ${line}`;

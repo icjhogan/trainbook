@@ -168,7 +168,7 @@ export function FeedClient({
                 className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all active:scale-95"
                 style={
                   isActive
-                    ? { backgroundColor: color.text, color: "#191919" }
+                    ? { backgroundColor: color.text, color: "var(--color-bg)" }
                     : { backgroundColor: color.bg, color: color.text }
                 }
               >

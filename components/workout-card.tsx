@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import type { Workout, Exercise } from "@/lib/types";
+import type { Workout } from "@/lib/types";
 import { WorkoutPill } from "./workout-pill";
 import { WorkoutForm } from "./workout-form";
 import { createClient } from "@/lib/supabase/client";

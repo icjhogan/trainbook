@@ -19,24 +19,6 @@ export async function uploadWorkoutImage(
   return fileName;
 }
 
-export function getImageUrl(
-  supabase: SupabaseClient,
-  path: string
-): string {
-  const { data } = supabase.storage
-    .from("workout-images")
-    .getPublicUrl(path);
-  return data.publicUrl;
-}
-
-export async function getSignedUrl(
-  supabase: SupabaseClient,
-  path: string
-): Promise<string> {
-  const { data, error } = await supabase.storage
-    .from("workout-images")
-    .createSignedUrl(path, 3600);
-
-  if (error) throw error;
-  return data.signedUrl;
-}
+// NOTE: getImageUrl/getSignedUrl were removed as dead code. The workout-images bucket is
+// private, so getPublicUrl never worked; the extract route mints signed URLs inline. Add a
+// helper back here if a component ever needs to display stored images.

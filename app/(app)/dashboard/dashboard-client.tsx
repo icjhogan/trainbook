@@ -3,15 +3,7 @@
 import type { Workout } from "@/lib/types";
 import { calculateRunningVolume, getWeekKey } from "@/lib/workout-utils";
 import { VolumeChart } from "@/components/volume-chart";
-import { EVENT_MAP, HEP_EVENTS } from "@/components/event-heatmap";
-import { getTypeColor, getEventColor } from "@/lib/workout-colors";
-
-function weekLabel(mondayStr: string): string {
-  const d = new Date(mondayStr + "T00:00:00");
-  const end = new Date(d);
-  end.setDate(d.getDate() + 6);
-  return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
-}
+import { getEventColor } from "@/lib/workout-colors";
 
 function daysAgo(dateIso: string): number {
   const d = new Date(dateIso + "T00:00:00");

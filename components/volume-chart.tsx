@@ -24,12 +24,12 @@ export function VolumeChart({ data }: { data: VolumeData[] }) {
         <BarChart data={data} margin={{ left: -20, right: 0, top: 0, bottom: 0 }}>
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 10, fill: "#8a8a8a" }}
+            tick={{ fontSize: 10, fill: "var(--color-chart)" }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fontSize: 10, fill: "#8a8a8a" }}
+            tick={{ fontSize: 10, fill: "var(--color-chart)" }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v: number) => `${(v / 1000).toFixed(1)}k`}
@@ -37,14 +37,14 @@ export function VolumeChart({ data }: { data: VolumeData[] }) {
           <Tooltip
             formatter={(value) => [`${value}m`, "volume"]}
             contentStyle={{
-              background: "#1a1a1a",
+              background: "var(--color-surface-raised)",
               border: "none",
               borderRadius: "6px",
-              color: "#fafafa",
+              color: "var(--color-text)",
               fontSize: "12px",
             }}
           />
-          <Bar dataKey="meters" fill="#8a8a8a" radius={[2, 2, 0, 0]} />
+          <Bar dataKey="meters" fill="var(--color-chart)" radius={[2, 2, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
