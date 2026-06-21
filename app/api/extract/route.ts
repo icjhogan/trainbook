@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { EXTRACTION_PROMPT } from "@/lib/extraction-prompt";
+import { buildExtractionPrompt } from "@/lib/extraction-prompt";
 import { rateLimit, EXTRACT_LIMIT } from "@/lib/rate-limit";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
@@ -51,8 +51,9 @@ export async function POST(request: NextRequest) {
   }
 
   let imagePath: unknown;
+  let anchorYear: unknown;
   try {
-    ({ imagePath } = await request.json());
+    ({ imagePath, anchorYear } = await request.json());
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
@@ -60,6 +61,14 @@ export async function POST(request: NextRequest) {
   if (typeof imagePath !== "string" || !imagePath) {
     return NextResponse.json({ error: "imagePath is required" }, { status: 400 });
   }
+
+  // Optional backfill anchor: accept a plausible 4-digit year, ignore anything else.
+  const anchor =
+    typeof anchorYear === "string" || typeof anchorYear === "number"
+      ? /^\d{4}$/.test(String(anchorYear).trim())
+        ? String(anchorYear).trim()
+        : undefined
+      : undefined;
 
   // Defense in depth: storage RLS already scopes objects to the user's folder, but
   // reject any path that isn't under this user's prefix before minting a signed URL.
@@ -114,7 +123,7 @@ export async function POST(request: NextRequest) {
               },
               {
                 type: "text",
-                text: EXTRACTION_PROMPT,
+                text: buildExtractionPrompt(anchor),
               },
             ],
           },

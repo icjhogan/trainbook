@@ -98,7 +98,7 @@ export default function UploadPage() {
       const res = await fetch("/api/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imagePath: path }),
+        body: JSON.stringify({ imagePath: path, anchorYear: anchorYear || undefined }),
       });
 
       if (!res.ok) {
