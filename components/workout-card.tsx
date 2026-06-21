@@ -21,6 +21,7 @@ export function WorkoutCard({ workout, onDelete, onUpdate, onOpenChat, defaultEx
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [editData, setEditData] = useState({
     date: workout.date,
@@ -55,6 +56,7 @@ export function WorkoutCard({ workout, onDelete, onUpdate, onOpenChat, defaultEx
 
   async function handleSave() {
     setSaving(true);
+    setSaveError(false);
     const { error } = await supabase
       .from("workouts")
       .update({
@@ -76,6 +78,9 @@ export function WorkoutCard({ workout, onDelete, onUpdate, onOpenChat, defaultEx
     if (!error) {
       onUpdate({ ...workout, ...editData });
       setEditing(false);
+    } else {
+      // Keep the user in the form with their edits intact and tell them it failed.
+      setSaveError(true);
     }
   }
 
@@ -102,6 +107,11 @@ export function WorkoutCard({ workout, onDelete, onUpdate, onOpenChat, defaultEx
           onSave={handleSave}
           saving={saving}
         />
+        {saveError && (
+          <p className="mt-3 text-[13px] text-[var(--color-danger)]">
+            Couldn&apos;t save — check your connection and try again.
+          </p>
+        )}
       </div>
     );
   }

@@ -188,7 +188,7 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("chats")
       .insert({ user_id: user.id, title: "New chat" })
       .select("id")
@@ -201,11 +201,18 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
       persistedIds.current = new Set();
       streamingChatId.current = data.id;
       setView("thread");
+    } else {
+      if (error) console.error("Failed to create chat:", error);
+      setToast("Couldn't start a chat");
     }
   }
 
   async function deleteChat(chatId: string) {
-    await supabase.from("chats").delete().eq("id", chatId);
+    const { error } = await supabase.from("chats").delete().eq("id", chatId);
+    if (error) {
+      setToast("Couldn't delete chat");
+      return;
+    }
     if (activeChatId === chatId) {
       setActiveChatId(null);
       setView("list");
@@ -223,11 +230,15 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
       setEditingChatId(null);
       return;
     }
-    await supabase
+    const { error } = await supabase
       .from("chats")
       .update({ title: editTitle.trim() })
       .eq("id", editingChatId);
     setEditingChatId(null);
+    if (error) {
+      setToast("Couldn't rename chat");
+      return;
+    }
     loadChats();
   }
 

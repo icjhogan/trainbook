@@ -90,6 +90,8 @@ export function FeedClient({
       if (!error) {
         setWorkouts((prev) => prev.filter((w) => w.id !== id));
         setToast("entry deleted");
+      } else {
+        setToast("couldn't delete entry");
       }
     },
     [supabase]
