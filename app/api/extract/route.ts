@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { EXTRACTION_PROMPT } from "@/lib/extraction-prompt";
+import { rateLimit, EXTRACT_LIMIT } from "@/lib/rate-limit";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
@@ -38,6 +39,15 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // AI-spend guardrail: cap vision-extraction calls per user.
+  const limit = rateLimit(`extract:${user.id}`, EXTRACT_LIMIT.max, EXTRACT_LIMIT.windowMs);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
   }
 
   let imagePath: unknown;
