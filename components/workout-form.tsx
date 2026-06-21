@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Exercise, ExtractedWorkout } from "@/lib/types";
+import { DateField } from "./date-field";
 
 interface WorkoutFormProps {
   workout: ExtractedWorkout;
@@ -54,6 +55,17 @@ export function WorkoutForm({
         </button>
       )}
 
+      {/* Date — prominent and first; the picker drives date_iso, the label is derived */}
+      <div>
+        <label className="text-label mb-1.5 block">date</label>
+        <DateField
+          value={workout.date_iso}
+          onChange={(iso, label) =>
+            onChange({ ...workout, date_iso: iso, date: label })
+          }
+        />
+      </div>
+
       {/* Flags */}
       {workout.flags?.length > 0 && (
         <div className="px-3 py-2.5 bg-[var(--color-flag-bg)] rounded-[var(--radius-sm)] space-y-1">
@@ -62,16 +74,6 @@ export function WorkoutForm({
           ))}
         </div>
       )}
-
-      {/* Date */}
-      <div>
-        <label className="text-label mb-1.5 block">date</label>
-        <input
-          value={workout.date}
-          onChange={(e) => updateField("date", e.target.value)}
-          className={inputClass}
-        />
-      </div>
 
       {/* Type + Events */}
       <div className="grid grid-cols-2 gap-3">
