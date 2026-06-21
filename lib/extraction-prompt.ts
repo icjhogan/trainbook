@@ -1,4 +1,16 @@
-export const EXTRACTION_PROMPT = `You are extracting handwritten track & field workout data from a scanned notebook page.
+// Build the vision-extraction prompt. The year guidance is parameterized so historical
+// backfill doesn't get misdated: with an anchor year, undated pages resolve to it; without
+// one, the model is told NOT to assume the current year and to flag year uncertainty.
+export function buildExtractionPrompt(anchorYear?: number | string): string {
+  // Defense in depth: only a real 4-digit year is used; anything else falls back to the
+  // no-assumption variant (also blocks prompt-injection if an unvalidated value ever reaches here).
+  const raw = anchorYear != null ? String(anchorYear).trim() : "";
+  const year = /^\d{4}$/.test(raw) ? raw : "";
+  const yearGuidance = year
+    ? `These pages are from ${year}. Resolve any date without an explicit year to ${year}, unless the page clearly states a different year.`
+    : `Do NOT assume the current year. If a date has no explicit year written on the page, infer it from context where possible; if you cannot determine the year, add a note such as "year uncertain" to the flags array.`;
+
+  return `You are extracting handwritten track & field workout data from a scanned notebook page.
 
 The page may contain one or more workouts. Each workout starts with a date header.
 
@@ -6,7 +18,7 @@ For EACH workout on this page, extract a JSON object with these fields:
 
 {
   "date": "the date as written (e.g. 'Wednesday, November 12th')",
-  "date_iso": "ISO date (YYYY-MM-DD) — assume the current year (${new Date().getFullYear()}) unless the text clearly indicates otherwise",
+  "date_iso": "ISO date (YYYY-MM-DD). ${yearGuidance}",
   "workout_type": "the type/category (e.g. 'Tempo', 'Extensive Tempo', 'Intensive Tempo', 'Speed', 'High Jump', 'Long Jump', 'Hurdles', 'Meet', 'Practice', etc.)",
   "event_focus": ["array of event focuses if identifiable (e.g. 'High Jump', 'Long Jump', '200m', 'Hurdles', 'Sprints')"],
   "exercises": [
@@ -23,7 +35,7 @@ For EACH workout on this page, extract a JSON object with these fields:
   "technical_cues": ["list of technique notes, coaching cues, or focus points mentioned"],
   "personal_notes": "any subjective comments (how they felt, injuries, conditions, etc.)",
   "raw_text": "your best transcription of ALL the text for this workout entry, preserving structure",
-  "flags": ["list of data quality concerns, e.g. 'time 57.5 is an outlier', 'distance unclear'"]
+  "flags": ["list of data quality concerns, e.g. 'time 57.5 is an outlier', 'distance unclear', 'year uncertain'"]
 }
 
 Important guidelines:
@@ -37,3 +49,4 @@ Important guidelines:
 - Add any uncertain readings to the flags array
 
 Return a JSON array of workout objects. Return ONLY valid JSON, no markdown fencing.`;
+}

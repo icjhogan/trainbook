@@ -35,6 +35,33 @@ export function isValidDateIso(value: string | null | undefined): value is strin
   return !Number.isNaN(new Date(value + "T00:00:00").getTime());
 }
 
+// Human-readable label derived from an ISO date (e.g. "2025-11-12" ->
+// "Wednesday, November 12"). Single source of truth for the displayed `date` string,
+// so the label can never drift from the sortable date_iso. Local-time construction;
+// returns "" on invalid input rather than throwing.
+export function formatDateLabel(dateIso: string): string {
+  if (!isValidDateIso(dateIso)) return "";
+  return new Date(dateIso + "T00:00:00").toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+// Default date_iso for a new manual entry: the last-saved date (sticky), else the backfill
+// anchor year (only when it's a real 4-digit year — guards against partial/garbage input
+// like "5" or "20255" producing an unsortable date), else today.
+export function resolveEntryDateIso(
+  carryDate: string,
+  anchorYear: string,
+  today: string,
+): string {
+  if (isValidDateIso(carryDate)) return carryDate;
+  if (/^\d{4}$/.test(anchorYear.trim())) return `${anchorYear.trim()}-01-01`;
+  return today;
+}
+
 // Monday-anchored ISO week key (e.g. "2025-11-10"). Single source of truth —
 // previously duplicated in dashboard-client, feed-client, and the chat route.
 // Returns null on invalid input rather than throwing (a bad date_iso used to crash

@@ -7,6 +7,8 @@ import { Toast } from "@/components/toast";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { ExtractedWorkout } from "@/lib/types";
+import { formatDateLabel, isValidDateIso, resolveEntryDateIso } from "@/lib/workout-utils";
+import { emptyExercise } from "@/lib/workout-shorthand";
 
 const LOADING_MESSAGES = [
   "Reading your handwriting...",
@@ -32,10 +34,38 @@ export default function UploadPage() {
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
+  // Backfill aids: a session year anchor (ephemeral) and the carry-forward from the last
+  // manual save, so the rapid-repeat loop defaults each new entry sensibly.
+  const [anchorYear, setAnchorYear] = useState("");
+  const [entryMode, setEntryMode] = useState<"photo" | "manual">("photo");
+  const [entryKey, setEntryKey] = useState(0); // bumped per fresh manual entry to remount the form
+  const carryRef = useRef<{ date_iso: string; workout_type: string; event_focus: string[] }>({
+    date_iso: "",
+    workout_type: "Practice",
+    event_focus: [],
+  });
   const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  // A fresh blank manual entry: date sticky to the last save (else the anchor year, else
+  // today); workout type and events carried forward from the last manual save.
+  function blankManualWorkout(): ExtractedWorkout {
+    const c = carryRef.current;
+    const dateIso = resolveEntryDateIso(c.date_iso, anchorYear, new Date().toISOString().slice(0, 10));
+    return {
+      date: formatDateLabel(dateIso),
+      date_iso: dateIso,
+      workout_type: c.workout_type || "Practice",
+      event_focus: c.event_focus || [],
+      exercises: [emptyExercise()],
+      technical_cues: [],
+      personal_notes: null,
+      raw_text: "",
+      flags: [],
+    };
+  }
 
   useEffect(() => {
     if (state !== "extracting") return;
@@ -48,6 +78,7 @@ export default function UploadPage() {
   }, [state]);
 
   async function handleFile(file: File) {
+    setEntryMode("photo");
     setImagePreview(URL.createObjectURL(file));
     setState("uploading");
     setError("");
@@ -63,7 +94,7 @@ export default function UploadPage() {
       const res = await fetch("/api/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imagePath: path }),
+        body: JSON.stringify({ imagePath: path, anchorYear: anchorYear || undefined }),
       });
 
       if (!res.ok) {
@@ -81,12 +112,18 @@ export default function UploadPage() {
   }
 
   async function handleSave(index: number) {
+    if (saving) return; // guard against double-submit in the rapid-repeat loop
+    const workout = workouts[index];
+    // Block saving an unsortable date — it would persist but vanish from the feed.
+    if (!isValidDateIso(workout.date_iso)) {
+      setToast("Pick a valid date before saving");
+      return;
+    }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const workout = workouts[index];
       const { error } = await supabase.from("workouts").insert({
         user_id: user.id,
         date: workout.date,
@@ -103,12 +140,28 @@ export default function UploadPage() {
 
       if (error) throw error;
 
-      const remaining = workouts.filter((_, i) => i !== index);
-      setWorkouts(remaining);
-      setToast("workout saved");
+      // Carry the confirmed date/type/events forward for the next entry (either mode).
+      carryRef.current = {
+        date_iso: workout.date_iso,
+        workout_type: workout.workout_type,
+        event_focus: workout.event_focus,
+      };
 
-      if (remaining.length === 0) {
-        setTimeout(() => router.push("/feed"), 1200);
+      if (entryMode === "manual") {
+        // Rapid-repeat: present a fresh entry in place.
+        setEntryKey((k) => k + 1);
+        setWorkouts([blankManualWorkout()]);
+        setToast("saved — next entry");
+      } else {
+        const remaining = workouts.filter((_, i) => i !== index);
+        setWorkouts(remaining);
+        setToast("workout saved");
+        if (remaining.length === 0) {
+          // Snap-confirm loop: return to capture for the next photo, not the feed.
+          setImagePreview("");
+          setImagePath("");
+          setState("capture");
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save workout");
@@ -155,7 +208,7 @@ export default function UploadPage() {
 
         {workouts.map((w, i) => (
           <div
-            key={i}
+            key={entryMode === "manual" ? `manual-${entryKey}` : i}
             className={i > 0 ? "mt-10 pt-10 border-t border-[var(--color-separator)]" : ""}
           >
             {/* Entry header with count and dismiss */}
@@ -231,6 +284,22 @@ export default function UploadPage() {
           </div>
         )}
 
+        {/* Backfill year anchor (optional) — defaults the year for new entries + extraction */}
+        <div className="w-full max-w-[320px] mb-6">
+          <label className="text-label mb-1.5 block">backfill year (optional)</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={anchorYear}
+            onChange={(e) => setAnchorYear(e.target.value)}
+            placeholder="e.g. 2025"
+            className="w-full px-3 py-2.5 rounded-[var(--radius-sm)] glass-input text-[15px] outline-none"
+          />
+          <p className="text-caption text-[var(--color-muted)] mt-1">
+            Sets the default year for new entries and photo extraction.
+          </p>
+        </div>
+
         {/* Camera target area */}
         <button
           onClick={() => cameraRef.current?.click()}
@@ -269,17 +338,10 @@ export default function UploadPage() {
           </button>
           <button
             onClick={() => {
-              setWorkouts([{
-                date: new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
-                date_iso: new Date().toISOString().slice(0, 10),
-                workout_type: "Practice",
-                event_focus: [],
-                exercises: [{ description: "", distance: null, reps: null, sets: null, times: [], rest: null, notes: null }],
-                technical_cues: [],
-                personal_notes: null,
-                raw_text: "",
-                flags: [],
-              }]);
+              setEntryMode("manual");
+              carryRef.current = { date_iso: "", workout_type: "Practice", event_focus: [] };
+              setEntryKey((k) => k + 1);
+              setWorkouts([blankManualWorkout()]);
               setState("confirm");
             }}
             className="w-full py-3 text-[14px] text-center text-[var(--color-muted)] min-h-[44px] active:opacity-50 transition-opacity"

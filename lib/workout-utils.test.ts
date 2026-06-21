@@ -3,9 +3,11 @@ import type { Exercise, Workout } from "./types";
 import {
   buildSummary,
   calculateRunningVolume,
+  formatDateLabel,
   getWeekKey,
   isValidDateIso,
   parseDistanceMeters,
+  resolveEntryDateIso,
   searchWorkouts,
 } from "./workout-utils";
 
@@ -88,6 +90,49 @@ describe("getWeekKey", () => {
     expect(getWeekKey("")).toBeNull();
     expect(getWeekKey("not-a-date")).toBeNull();
     expect(getWeekKey("2026-13-40")).toBeNull();
+  });
+});
+
+describe("formatDateLabel", () => {
+  it("derives a human-readable weekday/month/day/year label from an ISO date", () => {
+    const label = formatDateLabel("2025-11-12"); // a Wednesday
+    expect(label).toContain("Wednesday");
+    expect(label).toContain("November");
+    expect(label).toContain("12");
+    expect(label).toContain("2025"); // year included so backfilled years are unambiguous
+  });
+
+  it("formats year-boundary dates correctly", () => {
+    expect(formatDateLabel("2026-01-01")).toContain("January");
+    expect(formatDateLabel("2025-12-31")).toContain("December");
+  });
+
+  it("returns an empty string on invalid input instead of throwing", () => {
+    expect(formatDateLabel("")).toBe("");
+    expect(formatDateLabel("not-a-date")).toBe("");
+    expect(formatDateLabel("2026-13-40")).toBe("");
+  });
+});
+
+describe("resolveEntryDateIso", () => {
+  const today = "2026-06-21";
+
+  it("prefers the sticky last-saved date when valid", () => {
+    expect(resolveEntryDateIso("2025-11-12", "2024", today)).toBe("2025-11-12");
+  });
+
+  it("falls back to Jan 1 of a valid 4-digit anchor year when no sticky date", () => {
+    expect(resolveEntryDateIso("", "2025", today)).toBe("2025-01-01");
+  });
+
+  it("rejects a malformed anchor year and falls back to today (no unsortable date)", () => {
+    expect(resolveEntryDateIso("", "5", today)).toBe(today);
+    expect(resolveEntryDateIso("", "20255", today)).toBe(today);
+    expect(resolveEntryDateIso("", "", today)).toBe(today);
+  });
+
+  it("ignores an invalid sticky date and uses the anchor", () => {
+    expect(resolveEntryDateIso("not-a-date", "2025", today)).toBe("2025-01-01");
   });
 });
 

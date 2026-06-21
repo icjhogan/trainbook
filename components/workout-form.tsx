@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { Exercise, ExtractedWorkout } from "@/lib/types";
+import { DateField } from "./date-field";
+import { parseWorkoutShorthand } from "@/lib/workout-shorthand";
 
 interface WorkoutFormProps {
   workout: ExtractedWorkout;
@@ -19,6 +21,21 @@ export function WorkoutForm({
   saving,
 }: WorkoutFormProps) {
   const [imageExpanded, setImageExpanded] = useState(false);
+  const [shorthand, setShorthand] = useState("");
+
+  // Live shorthand -> structured exercises. Typing replaces the exercise list (and the
+  // workout type when a known prefix is present); editing the fields below fine-tunes it.
+  // An empty box is a no-op so it never clobbers already-populated exercises.
+  function applyShorthand(text: string) {
+    setShorthand(text);
+    if (!text.trim()) return;
+    const parsed = parseWorkoutShorthand(text);
+    onChange({
+      ...workout,
+      exercises: parsed.exercises,
+      workout_type: parsed.workoutType ?? workout.workout_type,
+    });
+  }
 
   function updateField<K extends keyof ExtractedWorkout>(
     key: K,
@@ -28,6 +45,9 @@ export function WorkoutForm({
   }
 
   function updateExercise<K extends keyof Exercise>(index: number, field: K, value: Exercise[K]) {
+    // Once the user fine-tunes a parsed exercise, clear the shorthand box so a later
+    // keystroke there can't silently re-parse and discard these manual edits.
+    if (shorthand) setShorthand("");
     const updated = [...workout.exercises];
     updated[index] = { ...updated[index], [field]: value };
     updateField("exercises", updated);
@@ -54,6 +74,17 @@ export function WorkoutForm({
         </button>
       )}
 
+      {/* Date — prominent and first; the picker drives date_iso, the label is derived */}
+      <div>
+        <label className="text-label mb-1.5 block">date</label>
+        <DateField
+          value={workout.date_iso}
+          onChange={(iso, label) =>
+            onChange({ ...workout, date_iso: iso, date: label })
+          }
+        />
+      </div>
+
       {/* Flags */}
       {workout.flags?.length > 0 && (
         <div className="px-3 py-2.5 bg-[var(--color-flag-bg)] rounded-[var(--radius-sm)] space-y-1">
@@ -62,16 +93,6 @@ export function WorkoutForm({
           ))}
         </div>
       )}
-
-      {/* Date */}
-      <div>
-        <label className="text-label mb-1.5 block">date</label>
-        <input
-          value={workout.date}
-          onChange={(e) => updateField("date", e.target.value)}
-          className={inputClass}
-        />
-      </div>
 
       {/* Type + Events */}
       <div className="grid grid-cols-2 gap-3">
@@ -101,6 +122,17 @@ export function WorkoutForm({
       {/* Exercises */}
       <div>
         <label className="text-label mb-2 block">exercises</label>
+        {/* Shorthand quick-add: parses into the structured list below, live */}
+        <textarea
+          value={shorthand}
+          onChange={(e) => applyShorthand(e.target.value)}
+          rows={2}
+          placeholder="quick add — e.g. 4x300 @55 r6min; 2x150 @19"
+          className={`${inputClass} resize-none font-mono text-[13px] mb-1`}
+        />
+        <p className="text-caption text-[var(--color-muted)] mb-3">
+          Type shorthand to fill the exercises below — edit any field to fine-tune.
+        </p>
         <div className="space-y-2">
           {workout.exercises.map((ex, i) => (
             <div
