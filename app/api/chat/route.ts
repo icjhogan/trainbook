@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getWeekKey } from "@/lib/workout-utils";
 import { anthropic } from "@ai-sdk/anthropic";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
@@ -73,12 +74,7 @@ export async function POST(req: Request) {
     .map((w) => w.date_iso)
     .filter(Boolean)
     .sort();
-  const weekSet = new Set(dates.map((d: string) => {
-    const dt = new Date(d + "T00:00:00");
-    const mon = new Date(dt);
-    mon.setDate(dt.getDate() - dt.getDay() + (dt.getDay() === 0 ? -6 : 1));
-    return mon.toISOString().slice(0, 10);
-  }));
+  const weekSet = new Set(dates.map((d: string) => getWeekKey(d)));
 
   const stats = {
     total: workouts?.length || 0,

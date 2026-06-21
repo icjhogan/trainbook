@@ -6,6 +6,7 @@ import { WorkoutRow } from "@/components/workout-row";
 import { Toast } from "@/components/toast";
 import { useSearch } from "@/lib/search-context";
 import { getTypeColor, getEventColor } from "@/lib/workout-colors";
+import { getWeekKey } from "@/lib/workout-utils";
 import { useChatOpener } from "@/lib/chat-opener-context";
 import type { Workout } from "@/lib/types";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
@@ -20,10 +21,7 @@ function groupByWeek(workouts: Workout[]): WeekGroup[] {
 
   for (const w of workouts) {
     if (!w.date_iso) continue;
-    const d = new Date(w.date_iso + "T00:00:00");
-    const monday = new Date(d);
-    monday.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1));
-    const key = monday.toISOString().slice(0, 10);
+    const key = getWeekKey(w.date_iso);
 
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(w);

@@ -28,6 +28,18 @@ export function buildSummary(workout: Partial<Workout>): string {
   return parts.join(" ");
 }
 
+// Monday-anchored ISO week key (e.g. "2025-11-10"). Single source of truth —
+// previously duplicated in dashboard-client, feed-client, and the chat route.
+// NOTE: uses toISOString(), so the key is computed in UTC; correct for UTC/positive
+// offsets but can shift a day in negative-UTC locales. Left as-is to preserve current
+// bucketing behavior; a local-time rewrite is a separate follow-up.
+export function getWeekKey(dateIso: string): string {
+  const d = new Date(dateIso + "T00:00:00");
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1));
+  return monday.toISOString().slice(0, 10);
+}
+
 export function parseDistanceMeters(distStr: string | null): number {
   if (!distStr) return 0;
   const cleaned = distStr.replace(/\[.*?\]/g, "").trim();
