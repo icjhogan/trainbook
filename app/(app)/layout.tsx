@@ -4,14 +4,13 @@ import { BottomNav } from "@/components/bottom-nav";
 import { TopBar } from "@/components/top-bar";
 import { ChatPanel } from "@/components/chat-panel";
 import { SearchProvider, useSearch } from "@/lib/search-context";
-import { ChatContextProvider, useChatContext } from "@/lib/chat-context";
+import { ChatContextProvider } from "@/lib/chat-context";
 import { ChatOpenerContext } from "@/lib/chat-opener-context";
 import { useState } from "react";
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const [chatOpen, setChatOpen] = useState(false);
   const { isSearching, setIsSearching, setQuery } = useSearch();
-  const { attachedWorkout } = useChatContext();
 
   function handleOpenSearch() {
     if (isSearching) {

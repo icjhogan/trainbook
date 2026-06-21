@@ -16,7 +16,7 @@ function highlightText(text: string, query: string) {
   const parts = text.split(regex);
   return parts.map((part, i) =>
     regex.test(part) ? (
-      <mark key={i} className="bg-[#3d2e0a] text-[#f0c340] rounded-sm px-0.5">
+      <mark key={i} className="bg-[var(--color-flag-bg)] text-[var(--color-flag-text)] rounded-sm px-0.5">
         {part}
       </mark>
     ) : (

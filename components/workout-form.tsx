@@ -1,19 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Exercise } from "@/lib/types";
-
-interface ExtractedWorkout {
-  date: string;
-  date_iso: string;
-  workout_type: string;
-  event_focus: string[];
-  exercises: Exercise[];
-  technical_cues: string[];
-  personal_notes: string | null;
-  raw_text: string;
-  flags: string[];
-}
+import type { Exercise, ExtractedWorkout } from "@/lib/types";
 
 interface WorkoutFormProps {
   workout: ExtractedWorkout;
@@ -39,7 +27,7 @@ export function WorkoutForm({
     onChange({ ...workout, [key]: value });
   }
 
-  function updateExercise(index: number, field: keyof Exercise, value: any) {
+  function updateExercise<K extends keyof Exercise>(index: number, field: K, value: Exercise[K]) {
     const updated = [...workout.exercises];
     updated[index] = { ...updated[index], [field]: value };
     updateField("exercises", updated);
@@ -68,9 +56,9 @@ export function WorkoutForm({
 
       {/* Flags */}
       {workout.flags?.length > 0 && (
-        <div className="px-3 py-2.5 bg-[#3d2e0a] rounded-[var(--radius-sm)] space-y-1">
+        <div className="px-3 py-2.5 bg-[var(--color-flag-bg)] rounded-[var(--radius-sm)] space-y-1">
           {workout.flags.map((flag, i) => (
-            <p key={i} className="text-caption text-[#f0c340]">{flag}</p>
+            <p key={i} className="text-caption text-[var(--color-flag-text)]">{flag}</p>
           ))}
         </div>
       )}

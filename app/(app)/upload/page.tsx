@@ -6,7 +6,7 @@ import { WorkoutForm } from "@/components/workout-form";
 import { Toast } from "@/components/toast";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { Exercise } from "@/lib/types";
+import type { ExtractedWorkout } from "@/lib/types";
 
 const LOADING_MESSAGES = [
   "Reading your handwriting...",
@@ -20,18 +20,6 @@ const LOADING_MESSAGES = [
   "Spotting the technical notes...",
   "Translating notebook to data...",
 ];
-
-interface ExtractedWorkout {
-  date: string;
-  date_iso: string;
-  workout_type: string;
-  event_focus: string[];
-  exercises: Exercise[];
-  technical_cues: string[];
-  personal_notes: string | null;
-  raw_text: string;
-  flags: string[];
-}
 
 type UploadState = "capture" | "uploading" | "extracting" | "confirm";
 
@@ -86,8 +74,8 @@ export default function UploadPage() {
       const { workouts: extracted } = await res.json();
       setWorkouts(extracted);
       setState("confirm");
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
       setState("capture");
     }
   }
@@ -122,8 +110,8 @@ export default function UploadPage() {
       if (remaining.length === 0) {
         setTimeout(() => router.push("/feed"), 1200);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't save workout");
     } finally {
       setSaving(false);
     }
@@ -238,7 +226,7 @@ export default function UploadPage() {
       {/* Main capture area */}
       <div className="flex-1 flex flex-col items-center justify-center px-8">
         {error && (
-          <div className="mb-8 px-4 py-3 bg-[#3b1414] rounded-[var(--radius-sm)] animate-fade-in w-full">
+          <div className="mb-8 px-4 py-3 bg-[var(--color-danger-bg)] rounded-[var(--radius-sm)] animate-fade-in w-full">
             <p className="text-caption text-[var(--color-danger)]">{error}</p>
           </div>
         )}

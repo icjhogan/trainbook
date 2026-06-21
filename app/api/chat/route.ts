@@ -1,4 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { getWeekKey } from "@/lib/workout-utils";
+import {
+  rateLimit,
+  CHAT_LIMIT,
+  CHAT_MAX_MESSAGES,
+  CHAT_MAX_TOTAL_CHARS,
+} from "@/lib/rate-limit";
 import { anthropic } from "@ai-sdk/anthropic";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
@@ -49,8 +56,6 @@ ${workoutContext || "No workouts recorded yet."}`;
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json();
-
   const supabase = await createClient();
   const {
     data: { user },
@@ -58,6 +63,34 @@ export async function POST(req: Request) {
 
   if (!user) {
     return new Response("Unauthorized", { status: 401 });
+  }
+
+  // AI-spend guardrail: cap requests per user before doing any model work.
+  const limit = rateLimit(`chat:${user.id}`, CHAT_LIMIT.max, CHAT_LIMIT.windowMs);
+  if (!limit.ok) {
+    return new Response("Too many requests", {
+      status: 429,
+      headers: { "Retry-After": String(limit.retryAfterSeconds) },
+    });
+  }
+
+  let messages: UIMessage[];
+  try {
+    ({ messages } = await req.json());
+  } catch {
+    return new Response("Invalid request body", { status: 400 });
+  }
+
+  // Bound the payload so a malformed or abusive client can't push an unbounded history.
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return new Response("messages must be a non-empty array", { status: 400 });
+  }
+  if (messages.length > CHAT_MAX_MESSAGES) {
+    return new Response("Too many messages", { status: 400 });
+  }
+  const totalChars = JSON.stringify(messages).length;
+  if (totalChars > CHAT_MAX_TOTAL_CHARS) {
+    return new Response("Message payload too large", { status: 400 });
   }
 
   // Fetch workouts for context
@@ -73,12 +106,7 @@ export async function POST(req: Request) {
     .map((w) => w.date_iso)
     .filter(Boolean)
     .sort();
-  const weekSet = new Set(dates.map((d: string) => {
-    const dt = new Date(d + "T00:00:00");
-    const mon = new Date(dt);
-    mon.setDate(dt.getDate() - dt.getDay() + (dt.getDay() === 0 ? -6 : 1));
-    return mon.toISOString().slice(0, 10);
-  }));
+  const weekSet = new Set(dates.map((d: string) => getWeekKey(d)).filter(Boolean));
 
   const stats = {
     total: workouts?.length || 0,

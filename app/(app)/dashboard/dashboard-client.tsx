@@ -1,24 +1,9 @@
 "use client";
 
 import type { Workout } from "@/lib/types";
-import { calculateRunningVolume } from "@/lib/workout-utils";
+import { calculateRunningVolume, getWeekKey } from "@/lib/workout-utils";
 import { VolumeChart } from "@/components/volume-chart";
-import { EVENT_MAP, HEP_EVENTS } from "@/components/event-heatmap";
-import { getTypeColor, getEventColor } from "@/lib/workout-colors";
-
-function getWeekKey(dateIso: string): string {
-  const d = new Date(dateIso + "T00:00:00");
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1));
-  return monday.toISOString().slice(0, 10);
-}
-
-function weekLabel(mondayStr: string): string {
-  const d = new Date(mondayStr + "T00:00:00");
-  const end = new Date(d);
-  end.setDate(d.getDate() + 6);
-  return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
-}
+import { getEventColor } from "@/lib/workout-colors";
 
 function daysAgo(dateIso: string): number {
   const d = new Date(dateIso + "T00:00:00");
@@ -47,7 +32,7 @@ export function DashboardClient({ workouts }: { workouts: Workout[] }) {
   const totalSessions = practiceWorkouts.length;
   const totalVolume = workouts.reduce((sum, w) => sum + calculateRunningVolume(w.exercises || []), 0);
   const dates = workouts.map((w) => w.date_iso).filter(Boolean).sort();
-  const weekSet = new Set(dates.map(getWeekKey));
+  const weekSet = new Set(dates.map(getWeekKey).filter(Boolean));
 
   // ── This week vs last week ──
   const now = new Date();
@@ -68,6 +53,7 @@ export function DashboardClient({ workouts }: { workouts: Workout[] }) {
   for (const w of workouts) {
     if (!w.date_iso) continue;
     const week = getWeekKey(w.date_iso);
+    if (!week) continue;
     const vol = calculateRunningVolume(w.exercises || []);
     volumeByWeek.set(week, (volumeByWeek.get(week) || 0) + vol);
   }
@@ -106,17 +92,23 @@ export function DashboardClient({ workouts }: { workouts: Workout[] }) {
     .slice(0, 5);
 
   // ── Recent streak ──
+  // Count consecutive training days ending at the most recent logged day. Anchoring
+  // on the latest entry (not "today") keeps a live streak visible on rest days and
+  // before today's session has been logged.
   const sortedDates = [...new Set(dates)].sort().reverse();
+  const dateSet = new Set(sortedDates);
   let streak = 0;
-  const today = new Date();
-  for (let i = 0; i < sortedDates.length; i++) {
-    const expected = new Date(today);
-    expected.setDate(today.getDate() - i);
-    const expectedStr = expected.toISOString().slice(0, 10);
-    if (sortedDates.includes(expectedStr)) {
-      streak++;
-    } else {
-      break;
+  if (sortedDates.length > 0) {
+    const anchor = new Date(sortedDates[0] + "T00:00:00");
+    for (let i = 0; i < sortedDates.length; i++) {
+      const expected = new Date(anchor);
+      expected.setDate(anchor.getDate() - i);
+      const expectedStr = expected.toISOString().slice(0, 10);
+      if (dateSet.has(expectedStr)) {
+        streak++;
+      } else {
+        break;
+      }
     }
   }
 

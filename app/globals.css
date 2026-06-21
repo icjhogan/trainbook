@@ -12,6 +12,10 @@
   --color-surface-raised: #2a2a2a;
   --color-accent: #ebebeb;
   --color-danger: #eb5757;
+  --color-danger-bg: #3b1414;
+  --color-flag-bg: #3d2e0a;
+  --color-flag-text: #f0c340;
+  --color-chart: #8a8a8a;
 
   --radius: 12px;
   --radius-sm: 8px;

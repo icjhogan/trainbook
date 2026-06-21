@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { EXTRACTION_PROMPT } from "@/lib/extraction-prompt";
+import { rateLimit, EXTRACT_LIMIT } from "@/lib/rate-limit";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
@@ -40,7 +41,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { imagePath } = await request.json();
+  // AI-spend guardrail: cap vision-extraction calls per user.
+  const limit = rateLimit(`extract:${user.id}`, EXTRACT_LIMIT.max, EXTRACT_LIMIT.windowMs);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+    );
+  }
+
+  let imagePath: unknown;
+  try {
+    ({ imagePath } = await request.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  if (typeof imagePath !== "string" || !imagePath) {
+    return NextResponse.json({ error: "imagePath is required" }, { status: 400 });
+  }
+
+  // Defense in depth: storage RLS already scopes objects to the user's folder, but
+  // reject any path that isn't under this user's prefix before minting a signed URL.
+  if (!imagePath.startsWith(`${user.id}/`)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { data: signedUrlData, error: urlError } = await supabase.storage
     .from("workout-images")
@@ -53,42 +78,56 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const imageResponse = await fetch(signedUrlData.signedUrl);
-  const imageBuffer = await imageResponse.arrayBuffer();
-
-  // Resize/compress to stay under Claude's 5MB limit
-  const processedImage = await resizeIfNeeded(imageBuffer);
-  const base64 = processedImage.toString("base64");
+  let base64: string;
+  try {
+    const imageResponse = await fetch(signedUrlData.signedUrl, {
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!imageResponse.ok) {
+      return NextResponse.json({ error: "Failed to download image" }, { status: 502 });
+    }
+    const imageBuffer = await imageResponse.arrayBuffer();
+    // Resize/compress to stay under Claude's 5MB limit
+    const processedImage = await resizeIfNeeded(imageBuffer);
+    base64 = processedImage.toString("base64");
+  } catch (err) {
+    console.error("Image processing error:", err);
+    return NextResponse.json({ error: "Image processing failed" }, { status: 400 });
+  }
 
   try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 4096,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: "image/jpeg",
-                data: base64,
+    const response = await anthropic.messages.create(
+      {
+        model: "claude-sonnet-4-6",
+        max_tokens: 4096,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: "image/jpeg",
+                  data: base64,
+                },
               },
-            },
-            {
-              type: "text",
-              text: EXTRACTION_PROMPT,
-            },
-          ],
-        },
-      ],
-    });
+              {
+                type: "text",
+                text: EXTRACTION_PROMPT,
+              },
+            ],
+          },
+        ],
+      },
+      { timeout: 25_000 }
+    );
 
-    let rawText =
-      response.content[0].type === "text"
-        ? response.content[0].text.trim()
-        : "";
+    const first = response.content[0];
+    if (!first || first.type !== "text") {
+      throw new Error("Claude returned no text content");
+    }
+    let rawText = first.text.trim();
 
     // Strip markdown fencing if present
     if (rawText.startsWith("```")) {
@@ -103,11 +142,9 @@ export async function POST(request: NextRequest) {
     const workoutArray = Array.isArray(workouts) ? workouts : [workouts];
 
     return NextResponse.json({ workouts: workoutArray });
-  } catch (err: any) {
-    console.error("Extraction error:", err);
-    return NextResponse.json(
-      { error: "Extraction failed", details: err.message },
-      { status: 500 }
-    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Extraction error:", message);
+    return NextResponse.json({ error: "Extraction failed" }, { status: 500 });
   }
 }
