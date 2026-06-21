@@ -3,6 +3,7 @@ import type { Exercise, Workout } from "./types";
 import {
   buildSummary,
   calculateRunningVolume,
+  formatDateLabel,
   getWeekKey,
   isValidDateIso,
   parseDistanceMeters,
@@ -88,6 +89,26 @@ describe("getWeekKey", () => {
     expect(getWeekKey("")).toBeNull();
     expect(getWeekKey("not-a-date")).toBeNull();
     expect(getWeekKey("2026-13-40")).toBeNull();
+  });
+});
+
+describe("formatDateLabel", () => {
+  it("derives a human-readable weekday/month/day label from an ISO date", () => {
+    const label = formatDateLabel("2025-11-12"); // a Wednesday
+    expect(label).toContain("Wednesday");
+    expect(label).toContain("November");
+    expect(label).toContain("12");
+  });
+
+  it("formats year-boundary dates correctly", () => {
+    expect(formatDateLabel("2026-01-01")).toContain("January");
+    expect(formatDateLabel("2025-12-31")).toContain("December");
+  });
+
+  it("returns an empty string on invalid input instead of throwing", () => {
+    expect(formatDateLabel("")).toBe("");
+    expect(formatDateLabel("not-a-date")).toBe("");
+    expect(formatDateLabel("2026-13-40")).toBe("");
   });
 });
 
