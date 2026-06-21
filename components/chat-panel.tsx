@@ -3,7 +3,9 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ChatMessage } from "./chat-message";
+import { Toast } from "./toast";
 import { createClient } from "@/lib/supabase/client";
+import { selectUnpersisted } from "@/lib/chat-persistence";
 import { useChatContext } from "@/lib/chat-context";
 import { useRef, useEffect, useState, useCallback } from "react";
 
@@ -38,8 +40,16 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState("");
+  const [toast, setToast] = useState("");
   const supabase = createClient();
   const { attachedWorkout, clearAttachment } = useChatContext();
+
+  // Ids of messages already written to the DB, so each turn inserts only new rows
+  // (append-only) instead of delete-all-then-reinsert. Seeded on load, reset on new chat.
+  const persistedIds = useRef<Set<string>>(new Set());
+  // The chat a stream belongs to, captured at send time, so a thread switch mid-stream
+  // can't persist the completed turn into the wrong thread.
+  const streamingChatId = useRef<string | null>(null);
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({
@@ -108,27 +118,38 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   }, [status]);
 
   async function saveMessages() {
-    if (!activeChatId) return;
+    // Persist to the thread the stream belongs to (captured at send time), not whatever
+    // thread happens to be active now.
+    const chatId = streamingChatId.current ?? activeChatId;
+    if (!chatId) return;
 
-    // Delete existing messages and re-insert all
-    await supabase.from("chat_messages").delete().eq("chat_id", activeChatId);
+    // Insert only messages not yet persisted — append-only, no destructive delete.
+    const newMessages = selectUnpersisted(messages, persistedIds.current);
+    if (newMessages.length === 0) return;
 
-    const rows = messages.map((m) => ({
-      chat_id: activeChatId,
+    const rows = newMessages.map((m) => ({
+      chat_id: chatId,
       role: m.role,
       content: getMessageText(m),
     }));
 
-    await supabase.from("chat_messages").insert(rows);
+    const { error } = await supabase.from("chat_messages").insert(rows);
+    if (error) {
+      // Leave persistedIds untouched so the next turn retries these rows; surface the failure.
+      setToast("Couldn't save chat");
+      return;
+    }
+    newMessages.forEach((m) => persistedIds.current.add(m.id));
 
     // Update chat title from first user message
     const firstUser = messages.find((m) => m.role === "user");
     if (firstUser) {
       const title = getMessageText(firstUser).slice(0, 60);
-      await supabase
+      const { error: titleError } = await supabase
         .from("chats")
         .update({ title, updated_at: new Date().toISOString() })
-        .eq("id", activeChatId);
+        .eq("id", chatId);
+      if (titleError) console.error("Failed to update chat title:", titleError);
     }
 
     loadChats();
@@ -156,6 +177,9 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
         parts: [{ type: "text" as const, text: m.content }],
       }))
     );
+    // These rows are already in the DB — don't re-insert them on the next save.
+    persistedIds.current = new Set(saved.map((m) => m.id));
+    streamingChatId.current = chatId;
 
     setView("thread");
   }
@@ -174,6 +198,8 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
       setActiveChatId(data.id);
       setMessages([]);
       setInitialMessages([]);
+      persistedIds.current = new Set();
+      streamingChatId.current = data.id;
       setView("thread");
     }
   }
@@ -240,6 +266,9 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
       clearAttachment();
     }
 
+    // Bind this stream to the current thread so the completed turn persists here even
+    // if the user navigates away mid-stream.
+    streamingChatId.current = activeChatId;
     sendMessage({ text });
     setInput("");
   }
@@ -254,6 +283,7 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-[var(--color-bg)] flex flex-col animate-slide-up">
+      <Toast message={toast} visible={!!toast} onDone={() => setToast("")} />
       {/* Handle bar */}
       <div className="flex justify-center pt-2 pb-0.5">
         <div className="w-9 h-1 rounded-full bg-[var(--color-border)]" />
