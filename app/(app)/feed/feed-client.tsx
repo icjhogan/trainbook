@@ -22,6 +22,7 @@ function groupByWeek(workouts: Workout[]): WeekGroup[] {
   for (const w of workouts) {
     if (!w.date_iso) continue;
     const key = getWeekKey(w.date_iso);
+    if (!key) continue;
 
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(w);

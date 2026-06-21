@@ -40,7 +40,7 @@ export function DashboardClient({ workouts }: { workouts: Workout[] }) {
   const totalSessions = practiceWorkouts.length;
   const totalVolume = workouts.reduce((sum, w) => sum + calculateRunningVolume(w.exercises || []), 0);
   const dates = workouts.map((w) => w.date_iso).filter(Boolean).sort();
-  const weekSet = new Set(dates.map(getWeekKey));
+  const weekSet = new Set(dates.map(getWeekKey).filter(Boolean));
 
   // ── This week vs last week ──
   const now = new Date();
@@ -61,6 +61,7 @@ export function DashboardClient({ workouts }: { workouts: Workout[] }) {
   for (const w of workouts) {
     if (!w.date_iso) continue;
     const week = getWeekKey(w.date_iso);
+    if (!week) continue;
     const vol = calculateRunningVolume(w.exercises || []);
     volumeByWeek.set(week, (volumeByWeek.get(week) || 0) + vol);
   }

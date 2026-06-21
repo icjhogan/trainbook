@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     .map((w) => w.date_iso)
     .filter(Boolean)
     .sort();
-  const weekSet = new Set(dates.map((d: string) => getWeekKey(d)));
+  const weekSet = new Set(dates.map((d: string) => getWeekKey(d)).filter(Boolean));
 
   const stats = {
     total: workouts?.length || 0,
