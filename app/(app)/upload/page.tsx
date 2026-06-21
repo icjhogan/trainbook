@@ -149,11 +149,20 @@ export default function UploadPage() {
         setWorkouts([blankManualWorkout()]);
         setToast("saved — next entry");
       } else {
+        // Remember the confirmed details so a following entry can default to them.
+        carryRef.current = {
+          date_iso: workout.date_iso,
+          workout_type: workout.workout_type,
+          event_focus: workout.event_focus,
+        };
         const remaining = workouts.filter((_, i) => i !== index);
         setWorkouts(remaining);
         setToast("workout saved");
         if (remaining.length === 0) {
-          setTimeout(() => router.push("/feed"), 1200);
+          // Snap-confirm loop: return to capture for the next photo, not the feed.
+          setImagePreview("");
+          setImagePath("");
+          setState("capture");
         }
       }
     } catch (err) {
