@@ -6,7 +6,7 @@ import { WorkoutRow } from "@/components/workout-row";
 import { Toast } from "@/components/toast";
 import { useSearch } from "@/lib/search-context";
 import { getTypeColor, getEventColor } from "@/lib/workout-colors";
-import { getWeekKey } from "@/lib/workout-utils";
+import { getWeekKey, searchWorkouts } from "@/lib/workout-utils";
 import { useChatOpener } from "@/lib/chat-opener-context";
 import type { Workout } from "@/lib/types";
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
@@ -43,24 +43,6 @@ function groupByWeek(workouts: Workout[]): WeekGroup[] {
       })}`;
       return { label, workouts };
     });
-}
-
-function searchWorkouts(workouts: Workout[], query: string): Workout[] {
-  const q = query.toLowerCase().trim();
-  if (!q) return workouts;
-
-  return workouts.filter((w) => {
-    const fields = [
-      w.date,
-      w.workout_type,
-      ...(w.event_focus || []),
-      w.personal_notes || "",
-      w.raw_text || "",
-      ...(w.technical_cues || []),
-      ...(w.exercises || []).map((e) => e.description),
-    ];
-    return fields.some((f) => f.toLowerCase().includes(q));
-  });
 }
 
 export function FeedClient({

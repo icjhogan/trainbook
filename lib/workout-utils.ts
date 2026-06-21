@@ -61,6 +61,26 @@ export function parseDistanceMeters(distStr: string | null): number {
   }, 0);
 }
 
+// Case-insensitive substring search across the human-readable workout fields.
+// Empty query returns the list unchanged.
+export function searchWorkouts(workouts: Workout[], query: string): Workout[] {
+  const q = query.toLowerCase().trim();
+  if (!q) return workouts;
+
+  return workouts.filter((w) => {
+    const fields = [
+      w.date,
+      w.workout_type,
+      ...(w.event_focus || []),
+      w.personal_notes || "",
+      w.raw_text || "",
+      ...(w.technical_cues || []),
+      ...(w.exercises || []).map((e) => e.description),
+    ];
+    return fields.some((f) => f.toLowerCase().includes(q));
+  });
+}
+
 export function calculateRunningVolume(exercises: Exercise[]): number {
   let total = 0;
   for (const ex of exercises) {
