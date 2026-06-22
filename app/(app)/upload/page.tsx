@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { uploadWorkoutImage } from "@/lib/supabase/storage";
 import { WorkoutForm } from "@/components/workout-form";
+import { WorkoutReviewCard } from "@/components/workout-review-card";
 import { Toast } from "@/components/toast";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -237,17 +238,26 @@ export default function UploadPage() {
               </div>
             )}
 
-            <WorkoutForm
-              workout={w}
-              imagePreview={i === 0 ? imagePreview : undefined}
-              onChange={(updated) => {
-                const next = [...workouts];
-                next[i] = updated;
-                setWorkouts(next);
-              }}
-              onSave={() => handleSave(i)}
-              saving={saving}
-            />
+            {(() => {
+              const props = {
+                workout: w,
+                imagePreview: i === 0 ? imagePreview : undefined,
+                onChange: (updated: ExtractedWorkout) => {
+                  const next = [...workouts];
+                  next[i] = updated;
+                  setWorkouts(next);
+                },
+                onSave: () => handleSave(i),
+                saving,
+              };
+              // Photo review uses the always-editable card; manual entry keeps the
+              // shorthand-driven form.
+              return entryMode === "photo" ? (
+                <WorkoutReviewCard {...props} />
+              ) : (
+                <WorkoutForm {...props} />
+              );
+            })()}
           </div>
         ))}
 
