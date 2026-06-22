@@ -289,6 +289,24 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
     });
   }
 
+  // One-tap embedding backfill so semantic search works over the existing corpus. Idempotent
+  // (only re-embeds stale rows); safe to run repeatedly.
+  const [indexing, setIndexing] = useState(false);
+  async function indexHistory() {
+    if (indexing) return;
+    setIndexing(true);
+    try {
+      const res = await fetch("/api/workouts/backfill", { method: "POST" });
+      if (!res.ok) throw new Error();
+      const { embedded } = await res.json();
+      setToast(embedded > 0 ? `Indexed ${embedded} sessions for search` : "Search index up to date");
+    } catch {
+      setToast("Couldn't index history");
+    } finally {
+      setIndexing(false);
+    }
+  }
+
   // Tap-to-open: fetch the cited workout and show it as a read-only overlay over the thread.
   async function openCitation(id: string) {
     const { data, error } = await supabase.from("workouts").select("*").eq("id", id).maybeSingle();
@@ -493,6 +511,13 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
                   <p className="text-caption text-[var(--color-muted)] text-center mt-1">
                     I can search your workouts, find patterns, and answer questions
                   </p>
+                  <button
+                    onClick={indexHistory}
+                    disabled={indexing}
+                    className="mt-5 px-4 py-2 rounded-full bg-[var(--color-surface)] text-[13px] text-[var(--color-secondary)] active:scale-95 transition-transform disabled:opacity-50"
+                  >
+                    {indexing ? "Indexing…" : "Index history for semantic search"}
+                  </button>
                 </div>
               )}
 
