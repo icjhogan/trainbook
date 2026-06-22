@@ -19,9 +19,10 @@ export function DateField({ value, onChange }: DateFieldProps) {
         type="date"
         value={value || ""}
         onChange={(e) => onChange(e.target.value, formatDateLabel(e.target.value))}
-        // colorScheme keeps the native picker dark to match the app theme.
+        // colorScheme keeps the native picker dark; appearance-none + min-w-0 + max-w-full
+        // stop iOS Safari's native date input from overflowing its container past the page.
         style={{ colorScheme: "dark" }}
-        className="w-full px-3 py-2.5 rounded-[var(--radius-sm)] glass-input text-[15px] outline-none"
+        className="block w-full min-w-0 max-w-full box-border appearance-none px-3 py-2.5 rounded-[var(--radius-sm)] glass-input text-[15px] outline-none"
       />
       {value && (
         <p className="text-caption text-[var(--color-muted)] mt-1">
