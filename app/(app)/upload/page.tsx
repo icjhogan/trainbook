@@ -122,24 +122,24 @@ export default function UploadPage() {
     }
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { error } = await supabase.from("workouts").insert({
-        user_id: user.id,
-        date: workout.date,
-        date_iso: workout.date_iso || null,
-        workout_type: workout.workout_type,
-        event_focus: workout.event_focus,
-        exercises: workout.exercises,
-        technical_cues: workout.technical_cues,
-        personal_notes: workout.personal_notes,
-        raw_text: workout.raw_text,
-        flags: workout.flags,
-        image_path: imagePath,
+      // Server write funnel: persists the row AND embeds it (server-only OpenAI key).
+      const res = await fetch("/api/workouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: workout.date,
+          date_iso: workout.date_iso || null,
+          workout_type: workout.workout_type,
+          event_focus: workout.event_focus,
+          exercises: workout.exercises,
+          technical_cues: workout.technical_cues,
+          personal_notes: workout.personal_notes,
+          raw_text: workout.raw_text,
+          flags: workout.flags,
+          image_path: imagePath,
+        }),
       });
-
-      if (error) throw error;
+      if (!res.ok) throw new Error((await res.text()) || "Couldn't save workout");
 
       // Carry the confirmed date/type/events forward for the next entry (either mode).
       carryRef.current = {

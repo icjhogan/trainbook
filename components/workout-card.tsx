@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import type { Workout } from "@/lib/types";
 import { WorkoutPill } from "./workout-pill";
 import { WorkoutForm } from "./workout-form";
-import { createClient } from "@/lib/supabase/client";
 import { useChatContext } from "@/lib/chat-context";
 
 interface WorkoutCardProps {
@@ -35,7 +34,6 @@ export function WorkoutCard({ workout, onDelete, onUpdate, onOpenChat, defaultEx
     flags: workout.flags || [],
   });
 
-  const supabase = createClient();
   const { attachWorkout } = useChatContext();
 
   const exercisePreview = workout.exercises?.slice(0, 2) || [];
@@ -57,9 +55,12 @@ export function WorkoutCard({ workout, onDelete, onUpdate, onOpenChat, defaultEx
   async function handleSave() {
     setSaving(true);
     setSaveError(false);
-    const { error } = await supabase
-      .from("workouts")
-      .update({
+    // Server write funnel: persists the edit AND re-embeds it (server-only OpenAI key).
+    const res = await fetch("/api/workouts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: workout.id,
         date: editData.date,
         date_iso: editData.date_iso || null,
         workout_type: editData.workout_type,
@@ -69,13 +70,12 @@ export function WorkoutCard({ workout, onDelete, onUpdate, onOpenChat, defaultEx
         personal_notes: editData.personal_notes,
         raw_text: editData.raw_text,
         flags: editData.flags,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", workout.id);
+      }),
+    });
 
     setSaving(false);
 
-    if (!error) {
+    if (res.ok) {
       onUpdate({ ...workout, ...editData });
       setEditing(false);
     } else {

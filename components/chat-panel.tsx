@@ -3,10 +3,13 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ChatMessage } from "./chat-message";
+import { WorkoutDetail } from "./workout-detail";
 import { Toast } from "./toast";
 import { createClient } from "@/lib/supabase/client";
 import { selectUnpersisted } from "@/lib/chat-persistence";
+import { collectCitations, extractCitationIds, type CitationMap } from "@/lib/chat-citations";
 import { useChatContext } from "@/lib/chat-context";
+import type { Workout } from "@/lib/types";
 import { useRef, useEffect, useState, useCallback } from "react";
 
 interface Chat {
@@ -40,6 +43,11 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState("");
   const [toast, setToast] = useState("");
+  // Validated citation labels (id -> date) for [[id]] markers, accumulated from tool results
+  // (live) and DB lookups (reload/tap). Only ids present here render as tappable chips.
+  const [citationMap, setCitationMap] = useState<CitationMap>({});
+  // Tap-to-open: the workout a citation chip opened, shown as an overlay over the thread.
+  const [detailWorkout, setDetailWorkout] = useState<Workout | null>(null);
   const supabase = createClient();
   const { attachedWorkout, clearAttachment } = useChatContext();
 
@@ -191,6 +199,15 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
     persistedIds.current = new Set(saved.map((m) => m.id));
     streamingChatId.current = chatId;
 
+    // Re-hydrate citation labels for [[id]] markers in the reloaded assistant text.
+    // Fresh per thread so labels don't bleed across conversations.
+    setCitationMap({});
+    const citeIds = saved
+      .filter((m) => m.role === "assistant")
+      .flatMap((m) => extractCitationIds(m.content));
+    resolveCitations(citeIds);
+
+    setDetailWorkout(null);
     setView("thread");
   }
 
@@ -211,6 +228,8 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
       setMessages([]);
       persistedIds.current = new Set();
       streamingChatId.current = data.id;
+      setCitationMap({});
+      setDetailWorkout(null);
       setView("thread");
     } else {
       if (error) console.error("Failed to create chat:", error);
@@ -258,6 +277,48 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
       .filter((part): part is Extract<typeof part, { type: "text" }> => part.type === "text")
       .map((part) => part.text)
       .join("");
+  }
+
+  // Resolve citation ids found in reloaded text (no tool parts) to real workouts, so their
+  // chips render with a date label. Also validates existence — a stale id simply won't resolve.
+  async function resolveCitations(ids: string[]) {
+    const unique = Array.from(new Set(ids));
+    if (unique.length === 0) return;
+    const { data } = await supabase.from("workouts").select("id, date").in("id", unique);
+    if (!data?.length) return;
+    setCitationMap((prev) => {
+      const next = { ...prev };
+      for (const w of data as { id: string; date: string }[]) next[w.id] = w.date;
+      return next;
+    });
+  }
+
+  // One-tap embedding backfill so semantic search works over the existing corpus. Idempotent
+  // (only re-embeds stale rows); safe to run repeatedly.
+  const [indexing, setIndexing] = useState(false);
+  async function indexHistory() {
+    if (indexing) return;
+    setIndexing(true);
+    try {
+      const res = await fetch("/api/workouts/backfill", { method: "POST" });
+      if (!res.ok) throw new Error();
+      const { embedded } = await res.json();
+      setToast(embedded > 0 ? `Indexed ${embedded} sessions for search` : "Search index up to date");
+    } catch {
+      setToast("Couldn't index history");
+    } finally {
+      setIndexing(false);
+    }
+  }
+
+  // Tap-to-open: fetch the cited workout and show it as a read-only overlay over the thread.
+  async function openCitation(id: string) {
+    const { data, error } = await supabase.from("workouts").select("*").eq("id", id).maybeSingle();
+    if (error || !data) {
+      setToast("Couldn't open that session");
+      return;
+    }
+    setDetailWorkout(data as Workout);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -454,19 +515,42 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
                   <p className="text-caption text-[var(--color-muted)] text-center mt-1">
                     I can search your workouts, find patterns, and answer questions
                   </p>
+                  <button
+                    onClick={indexHistory}
+                    disabled={indexing}
+                    className="mt-5 px-4 py-2 rounded-full bg-[var(--color-surface)] text-[13px] text-[var(--color-secondary)] active:scale-95 transition-transform disabled:opacity-50"
+                  >
+                    {indexing ? "Indexing…" : "Index history for semantic search"}
+                  </button>
                 </div>
               )}
 
               <div className="space-y-6">
-                {messages.map((m) => (
-                  <ChatMessage
-                    key={m.id}
-                    role={m.role as "user" | "assistant"}
-                    content={getMessageText(m)}
-                  />
-                ))}
+                {messages.map((m, idx) => {
+                  const isLast = idx === messages.length - 1;
+                  // Live turns carry tool-result parts: validate [[id]] markers against THIS
+                  // message's own results only, so a later hallucinated id can't borrow
+                  // validity from an id seen earlier in the thread. Reloaded messages (no tool
+                  // parts) fall back to the DB-resolved citationMap.
+                  const own = m.role === "assistant" ? collectCitations(m.parts) : {};
+                  const citations =
+                    m.role === "assistant"
+                      ? (Object.keys(own).length > 0 ? own : citationMap)
+                      : undefined;
+                  return (
+                    <ChatMessage
+                      key={m.id}
+                      role={m.role as "user" | "assistant"}
+                      content={getMessageText(m)}
+                      citations={citations}
+                      streaming={isLast && isLoading && m.role === "assistant"}
+                      onCite={openCitation}
+                    />
+                  );
+                })}
               </div>
 
+              {/* Initial "thinking" dots — before any assistant output this turn. */}
               {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
                 <div className="mt-6 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-muted)] animate-pulse-soft" style={{ animationDelay: "0ms" }} />
@@ -474,6 +558,19 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-muted)] animate-pulse-soft" style={{ animationDelay: "400ms" }} />
                 </div>
               )}
+
+              {/* Tool calls in flight: the assistant message exists but has no text yet. */}
+              {isLoading &&
+                messages[messages.length - 1]?.role === "assistant" &&
+                getMessageText(messages[messages.length - 1]).trim() === "" && (
+                  <div className="mt-6 flex items-center gap-2 text-[13px] text-[var(--color-muted)] animate-pulse-soft">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="7" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    Searching your training log…
+                  </div>
+                )}
             </div>
           </div>
 
@@ -528,6 +625,11 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
             </form>
           </div>
         </>
+      )}
+
+      {/* Tap-to-open citation: read-only workout over the thread (z-[60] covers the panel). */}
+      {detailWorkout && (
+        <WorkoutDetail workout={detailWorkout} onClose={() => setDetailWorkout(null)} />
       )}
     </div>
   );

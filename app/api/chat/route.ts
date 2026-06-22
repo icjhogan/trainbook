@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { getWeekKey } from "@/lib/workout-utils";
 import {
   rateLimit,
   CHAT_LIMIT,
@@ -7,9 +6,24 @@ import {
   CHAT_MAX_TOTAL_CHARS,
 } from "@/lib/rate-limit";
 import { anthropic } from "@ai-sdk/anthropic";
-import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import {
+  convertToModelMessages,
+  streamText,
+  stepCountIs,
+  tool,
+  jsonSchema,
+  type UIMessage,
+  type ToolSet,
+} from "ai";
+import { createSupabaseReader, type ScopedWorkoutReader } from "@/lib/agent/reader";
+import { toolDefinitions } from "@/lib/agent/tools";
 
-function buildSystemPrompt(workoutContext: string, stats: { total: number; weeks: number; earliest: string; latest: string }) {
+// Multi-step agentic loop + per-step embedding/RRF round-trips need more than the old 30s.
+// On Vercel Fluid Compute the platform default is generous; 60s gives the loop headroom and
+// still bounds a runaway request. stopWhen below caps the step count.
+export const maxDuration = 60;
+
+function buildSystemPrompt(): string {
   const now = new Date();
   const dateStr = now.toLocaleDateString("en-US", {
     weekday: "long",
@@ -18,42 +32,53 @@ function buildSystemPrompt(workoutContext: string, stats: { total: number; weeks
     day: "numeric",
   });
 
-  return `You are an AI training assistant embedded in a personal workout journal app for track & field athletes. Today is ${dateStr}.
+  return `You are an AI training assistant embedded in a personal workout journal for a heptathlon athlete. Today is ${dateStr}.
 
 ## Your role
-You are a knowledgeable, supportive training partner — not a generic chatbot. You understand periodization, event-specific technique, recovery, and the mental side of competing. You speak like a thoughtful coach or experienced training partner: direct, specific, warm but not cheerful.
+A knowledgeable, supportive training partner — like a thoughtful coach. Direct, specific, warm but not cheerful. You understand periodization, the 7 heptathlon events, recovery, and competing.
 
-## What you know
-You have access to the athlete's training log. They have ${stats.total} workout entries spanning ${stats.weeks} weeks (${stats.earliest} to ${stats.latest}).
+## How you access the log — ALWAYS use your tools
+You do NOT have the training log in front of you. You read it through tools, over the athlete's ENTIRE history (not just recent sessions):
+- **search_workouts** — find sessions by date range / event / type.
+- **semantic_search** — find sessions by meaning ("the session where my hamstring flared").
+- **get_workout** — pull one full session by id or date.
+- **compute_metric** — exact numbers (volume, weekly_volume, event_coverage, session_count). NEVER estimate or eyeball a number — call this tool. If a number can't be computed, say so.
+- **event_coverage** — how much each event has been trained.
 
-When answering questions:
-- Reference specific dates and sessions from their data
-- Notice patterns: recurring technique cues, volume trends, injury timelines
-- Be honest when the data doesn't contain what they're asking about
-- If they ask about a workout you can see, give detailed analysis
-- If they ask for advice, ground it in what you see in their training history
+Call tools as needed, including several in sequence (search, then compute, then answer). Answer once you have what you need.
 
-## What you're good at
-- Analyzing training load and volume trends
-- Spotting recurring technical cues (what keeps coming up means it's not fixed yet)
-- Connecting injuries/pain to training patterns
-- Suggesting workout modifications based on their history
-- Competition prep analysis (taper, peaking, event-specific readiness)
-- Comparing sessions across time to show progress or regression
+## Grounding and citations (important)
+- Every time you reference a specific session, append a citation marker immediately after it: \`[[<workout-id>]]\`, using the exact \`id\` from a tool result. Example: "Your 300m volume jumped in early March [[a1b2-...]]."
+- Only cite ids that appeared in a tool result this turn. Never invent an id.
+- If a tool returns nothing, an empty list, or an \`error\` field, say plainly that you couldn't find/compute it — do NOT fabricate an answer or a citation.
 
-## How to respond
-- Be concise. Athletes don't want essays.
-- Use specific numbers and dates from their data
-- If they share a workout, analyze it — don't just summarize it back
-- Ask clarifying questions if their request is ambiguous
-- When suggesting changes, explain the reasoning briefly
+## You are read-only
+You can read and analyze, but you cannot log, edit, or change anything in the journal. If asked to add or change a workout or plan, explain that you can't make changes — they can do that themselves in the app.
 
-## Training Data
-
-${workoutContext || "No workouts recorded yet."}`;
+## Style
+Concise — athletes don't want essays. Use specific numbers and dates from tool results. Explain reasoning briefly when giving advice.`;
 }
 
-export const maxDuration = 30;
+// Adapt the transport-agnostic tool registry to an AI-SDK ToolSet bound to this request's
+// RLS-scoped reader. Tool errors are returned as structured results (never thrown) so the
+// model can acknowledge a failure instead of fabricating around it (R7).
+function buildChatTools(reader: ScopedWorkoutReader): ToolSet {
+  const tools: ToolSet = {};
+  for (const def of toolDefinitions) {
+    tools[def.name] = tool({
+      description: def.description,
+      inputSchema: jsonSchema(def.inputSchema as Parameters<typeof jsonSchema>[0]),
+      execute: async (args) => {
+        try {
+          return await def.handler(reader, args as Record<string, unknown>);
+        } catch (err) {
+          return { error: err instanceof Error ? err.message : "tool failed" };
+        }
+      },
+    });
+  }
+  return tools;
+}
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -81,7 +106,6 @@ export async function POST(req: Request) {
     return new Response("Invalid request body", { status: 400 });
   }
 
-  // Bound the payload so a malformed or abusive client can't push an unbounded history.
   if (!Array.isArray(messages) || messages.length === 0) {
     return new Response("messages must be a non-empty array", { status: 400 });
   }
@@ -93,49 +117,19 @@ export async function POST(req: Request) {
     return new Response("Message payload too large", { status: 400 });
   }
 
-  // Fetch workouts for context
-  const { data: workouts } = await supabase
-    .from("workouts")
-    .select("date, date_iso, workout_type, event_focus, exercises, technical_cues, personal_notes, flags")
-    .eq("user_id", user.id)
-    .order("date_iso", { ascending: false })
-    .limit(50);
-
-  // Compute stats
-  const dates = (workouts || [])
-    .map((w) => w.date_iso)
-    .filter(Boolean)
-    .sort();
-  const weekSet = new Set(dates.map((d: string) => getWeekKey(d)).filter(Boolean));
-
-  const stats = {
-    total: workouts?.length || 0,
-    weeks: weekSet.size,
-    earliest: dates[0] || "N/A",
-    latest: dates[dates.length - 1] || "N/A",
-  };
-
-  const workoutContext = workouts
-    ?.map((w) => {
-      const parts = [`${w.date} (${w.date_iso}) — ${w.workout_type}`];
-      if (w.event_focus?.length) parts[0] += ` [${w.event_focus.join(", ")}]`;
-      for (const ex of w.exercises || []) {
-        let line = `- ${ex.description}`;
-        if (ex.times?.length) line += ` (${ex.times.join(", ")})`;
-        if (ex.rest) line += ` [rest: ${ex.rest}]`;
-        parts.push(line);
-      }
-      if (w.technical_cues?.length)
-        parts.push(`Cues: ${w.technical_cues.join("; ")}`);
-      if (w.personal_notes) parts.push(`Notes: ${w.personal_notes}`);
-      return parts.join("\n");
-    })
-    .join("\n\n");
+  const reader = createSupabaseReader(supabase, user.id);
 
   const result = streamText({
     model: anthropic("claude-sonnet-4-6"),
-    system: buildSystemPrompt(workoutContext || "", stats),
+    system: buildSystemPrompt(),
     messages: await convertToModelMessages(messages),
+    tools: buildChatTools(reader),
+    // Enables multi-step tool-calling AND bounds it — without this, ai@6 defaults to
+    // stepCountIs(1) and the agent would stop after a single tool call (KTD1).
+    stopWhen: stepCountIs(5),
+    // Return a clean app-level error just under the 60s function ceiling rather than being
+    // hard-killed mid-stream if the loop runs long.
+    timeout: { totalMs: 55_000 },
   });
 
   return result.toUIMessageStreamResponse();
