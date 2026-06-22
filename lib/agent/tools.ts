@@ -99,6 +99,29 @@ export async function eventCoverageTool(reader: ScopedWorkoutReader, args: Range
   return { events: eventCoverage(rows, toFilter(args)) };
 }
 
+export async function semanticSearch(
+  reader: ScopedWorkoutReader,
+  args: { query: string; limit?: number },
+) {
+  const limit = Math.min(Math.max(args.limit ?? 8, 1), 25);
+  const { hits, degraded } = await reader.hybridSearch({ queryText: args.query, limit });
+  return {
+    degraded, // true => embedding unavailable, results are keyword-only this turn
+    returned: hits.length,
+    workouts: hits.map((h) => ({
+      id: h.id,
+      date: h.date,
+      date_iso: h.date_iso,
+      workout_type: h.workout_type,
+      event_focus: h.event_focus,
+      exercises: (h.exercises || []).map((e) => ({ description: e.description, times: e.times, rest: e.rest })),
+      technical_cues: h.technical_cues,
+      personal_notes: h.personal_notes,
+    })),
+    citations: hits.map((h) => ({ id: h.id, date: h.date, date_iso: h.date_iso })),
+  };
+}
+
 // Declarative, transport-agnostic tool registry. `inputSchema` is plain JSON Schema (no zod
 // dependency); adapters wrap each `handler`. Descriptions are written for the model.
 export interface ToolDefinition {
@@ -158,7 +181,7 @@ export const toolDefinitions: ToolDefinition[] = [
       required: ["metric"],
       additionalProperties: false,
     },
-    handler: (reader, args) => computeMetricTool(reader, args as RangeArgs & { metric: MetricName }),
+    handler: (reader, args) => computeMetricTool(reader, args as unknown as RangeArgs & { metric: MetricName }),
   },
   {
     name: "event_coverage",
@@ -166,5 +189,20 @@ export const toolDefinitions: ToolDefinition[] = [
       "How much each heptathlon event has been trained (session counts + last-trained date), optionally within a date range. Use for balance/neglect questions.",
     inputSchema: { type: "object", properties: { ...rangeProps }, additionalProperties: false },
     handler: (reader, args) => eventCoverageTool(reader, args as RangeArgs),
+  },
+  {
+    name: "semantic_search",
+    description:
+      "Find sessions by meaning across the entire history, not just keywords — use for fuzzy/thematic recall like 'the session where my hamstring flared' or 'when I first felt fast'. Returns the most relevant sessions with ids for citation. Prefer search_workouts when the user gives concrete date/event filters.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Natural-language description of what to find." },
+        limit: { type: "number", description: "Max sessions to return (default 8)." },
+      },
+      required: ["query"],
+      additionalProperties: false,
+    },
+    handler: (reader, args) => semanticSearch(reader, args as unknown as { query: string; limit?: number }),
   },
 ];

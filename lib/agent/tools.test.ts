@@ -9,6 +9,7 @@ import {
   getWorkout,
   computeMetricTool,
   eventCoverageTool,
+  semanticSearch,
   toolDefinitions,
 } from "./tools";
 
@@ -33,6 +34,21 @@ function fakeReader(corpus: Workout[]): ScopedWorkoutReader {
     },
     async getWorkout({ id, date_iso }) {
       return corpus.find((w) => (id ? w.id === id : w.date_iso === date_iso)) ?? null;
+    },
+    async hybridSearch({ queryText, limit = 10 }) {
+      // Fake "semantic" match: substring over a few fields, returned as scored hits.
+      const q = queryText.toLowerCase();
+      const hits = corpus
+        .filter((w) =>
+          [w.workout_type, ...(w.event_focus || []), w.personal_notes || ""].join(" ").toLowerCase().includes(q),
+        )
+        .slice(0, limit)
+        .map((w, i) => ({
+          id: w.id, date: w.date, date_iso: w.date_iso, workout_type: w.workout_type,
+          event_focus: w.event_focus, exercises: w.exercises, technical_cues: w.technical_cues,
+          personal_notes: w.personal_notes, score: 1 - i * 0.1,
+        }));
+      return { hits, degraded: false };
     },
   };
 }
@@ -93,13 +109,34 @@ describe("event_coverage", () => {
   });
 });
 
+describe("semantic_search", () => {
+  it("returns scored hits with citations and a degraded flag", async () => {
+    const r = await semanticSearch(fakeReader(corpus), { query: "hurdles" });
+    expect(r.degraded).toBe(false);
+    expect(r.returned).toBeGreaterThan(0);
+    expect(r.citations.every((c) => typeof c.id === "string")).toBe(true);
+  });
+
+  it("surfaces degraded=true when the reader reports keyword-only fallback", async () => {
+    const degradedReader: ScopedWorkoutReader = {
+      ...fakeReader(corpus),
+      async hybridSearch() {
+        return { hits: [], degraded: true };
+      },
+    };
+    const r = await semanticSearch(degradedReader, { query: "anything" });
+    expect(r.degraded).toBe(true);
+  });
+});
+
 describe("tool registry", () => {
-  it("exposes 4 read tools with schemas + handlers", () => {
+  it("exposes 5 read tools with schemas + handlers", () => {
     expect(toolDefinitions.map((t) => t.name).sort()).toEqual([
       "compute_metric",
       "event_coverage",
       "get_workout",
       "search_workouts",
+      "semantic_search",
     ]);
     for (const t of toolDefinitions) {
       expect(typeof t.handler).toBe("function");
