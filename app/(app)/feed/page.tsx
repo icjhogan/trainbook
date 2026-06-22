@@ -7,7 +7,9 @@ export default async function FeedPage() {
     .from("workouts")
     .select("*")
     .order("date_iso", { ascending: false })
-    .limit(20);
+    // Show the full history. The 20-cap silently hid older entries once the log grew past
+    // 20, making manually-entered months look deleted. Paginate if this ever exceeds ~1000.
+    .limit(1000);
 
   // Surface a real fetch failure to the error boundary instead of rendering an
   // empty feed that looks like "no workouts yet".
