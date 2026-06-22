@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { embedWorkout } from "@/lib/embeddings";
+import { embedWorkout, type EmbeddingSource } from "@/lib/embeddings";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Authenticated, RLS-scoped embedding backfill. Runs as the logged-in user (no service-role
 // key needed — every row it can see is its own), so it both populates the initial corpus and
@@ -13,6 +14,15 @@ export async function POST() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
+
+  // Idempotent but embed-spending: cap repeated taps / multi-tab loops.
+  const limit = rateLimit(`backfill:${user.id}`, 3, 60_000);
+  if (!limit.ok) {
+    return new Response("Too many requests", {
+      status: 429,
+      headers: { "Retry-After": String(limit.retryAfterSeconds) },
+    });
+  }
 
   const { data: rows, error } = await supabase
     .from("workouts")
@@ -29,7 +39,7 @@ export async function POST() {
   const failures: string[] = [];
   for (const w of stale) {
     try {
-      const embedding = await embedWorkout(w as never);
+      const embedding = await embedWorkout(w as unknown as EmbeddingSource);
       const { error: upErr } = await supabase
         .from("workouts")
         .update({ embedding, embedded_at: new Date().toISOString() })

@@ -2,6 +2,7 @@
 
 import type { Workout } from "@/lib/types";
 import { calculateRunningVolume, getWeekKey } from "@/lib/workout-utils";
+import { isPractice } from "@/lib/workout-metrics";
 import { VolumeChart } from "@/components/volume-chart";
 import { getEventColor } from "@/lib/workout-colors";
 
@@ -24,9 +25,8 @@ export function DashboardClient({ workouts }: { workouts: Workout[] }) {
     );
   }
 
-  const practiceWorkouts = workouts.filter(
-    (w) => !["Season Schedule", "Weekly Plan", "Goals", "Reflection", "Competition Cues"].includes(w.workout_type)
-  );
+  // Shared with the chat assistant's metrics so the two can never disagree (KTD4).
+  const practiceWorkouts = workouts.filter(isPractice);
 
   // ── Stats ──
   const totalSessions = practiceWorkouts.length;

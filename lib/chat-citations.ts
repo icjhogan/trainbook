@@ -38,7 +38,9 @@ export function extractCitationIds(content: string): string[] {
 // an incomplete trailing marker ("[[ab") is hidden so a half-formed chip never flashes.
 export function applyCitations(content: string, citations: CitationMap, streaming: boolean): string {
   let text = content;
-  if (streaming) text = text.replace(/\[\[[^\]]*$/g, "");
+  // Hide an incomplete trailing marker while streaming — matches both "[[ab" (no closing
+  // bracket) and "[[ab]" (one of two), so a half-formed chip never flashes.
+  if (streaming) text = text.replace(/\[\[[^\]]*\]?$/g, "");
   return text.replace(/\[\[([^\]\s]+)\]\]/g, (_match, id: string) => {
     const date = citations[id];
     return date ? `[${date}](#cite-${id})` : "";

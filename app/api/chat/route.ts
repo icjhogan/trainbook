@@ -127,6 +127,9 @@ export async function POST(req: Request) {
     // Enables multi-step tool-calling AND bounds it — without this, ai@6 defaults to
     // stepCountIs(1) and the agent would stop after a single tool call (KTD1).
     stopWhen: stepCountIs(5),
+    // Return a clean app-level error just under the 60s function ceiling rather than being
+    // hard-killed mid-stream if the loop runs long.
+    timeout: { totalMs: 55_000 },
   });
 
   return result.toUIMessageStreamResponse();

@@ -5,6 +5,7 @@ import {
   eventCoverage,
   type MetricName,
   type MetricFilter,
+  type MetricCitation,
 } from "@/lib/workout-metrics";
 
 // Transport-agnostic read/compute tool layer (R8/KTD5). Each tool is a pure async function of
@@ -13,18 +14,14 @@ import {
 // Every result carries `citations` so the assistant can ground claims in real sessions, and
 // the UI can validate model-emitted ids against them (KTD7).
 
-export interface Citation {
-  id: string;
-  date: string;
-  date_iso: string;
-}
-
-function cite(w: Workout): Citation {
+function cite(w: Workout): MetricCitation {
   return { id: w.id, date: w.date, date_iso: w.date_iso };
 }
 
 // Compact view for list/search results — enough for the model to reason and cite without the
-// full record. get_workout returns the complete detail.
+// full record. get_workout returns the complete detail. Includes per-exercise `notes` and the
+// workout `flags` (uncertain extraction readings) so the agent can surface coaching notes and
+// caveat low-confidence data.
 function summarize(w: Workout) {
   return {
     id: w.id,
@@ -39,9 +36,11 @@ function summarize(w: Workout) {
       sets: e.sets,
       times: e.times,
       rest: e.rest,
+      notes: e.notes,
     })),
     technical_cues: w.technical_cues,
     personal_notes: w.personal_notes,
+    flags: w.flags,
   };
 }
 
@@ -114,7 +113,7 @@ export async function semanticSearch(
       date_iso: h.date_iso,
       workout_type: h.workout_type,
       event_focus: h.event_focus,
-      exercises: (h.exercises || []).map((e) => ({ description: e.description, times: e.times, rest: e.rest })),
+      exercises: (h.exercises || []).map((e) => ({ description: e.description, times: e.times, rest: e.rest, notes: e.notes })),
       technical_cues: h.technical_cues,
       personal_notes: h.personal_notes,
     })),

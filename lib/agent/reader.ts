@@ -52,7 +52,8 @@ export function createSupabaseReader(supabase: SupabaseClient, userId: string): 
       const { data, error } = await supabase
         .from("workouts")
         .select(READ_COLUMNS)
-        .order("date_iso", { ascending: false });
+        .order("date_iso", { ascending: false })
+        .limit(1000);
       if (error) throw new Error(`listWorkouts failed: ${error.message}`);
       const rows = (data || []) as unknown as Workout[];
       // Structured filtering (date range / event / type) is applied in TS via the shared
@@ -63,7 +64,8 @@ export function createSupabaseReader(supabase: SupabaseClient, userId: string): 
     async getWorkout({ id, date_iso }) {
       if (!id && !date_iso) return null;
       let q = supabase.from("workouts").select(READ_COLUMNS);
-      q = id ? q.eq("id", id) : q.eq("date_iso", date_iso!);
+      // Deterministic when a date has multiple sessions (two-a-days): oldest first.
+      q = id ? q.eq("id", id) : q.eq("date_iso", date_iso!).order("created_at", { ascending: true });
       const { data, error } = await q.limit(1).maybeSingle();
       if (error) throw new Error(`getWorkout failed: ${error.message}`);
       return (data as unknown as Workout) ?? null;

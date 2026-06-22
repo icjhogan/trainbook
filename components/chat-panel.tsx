@@ -200,6 +200,8 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
     streamingChatId.current = chatId;
 
     // Re-hydrate citation labels for [[id]] markers in the reloaded assistant text.
+    // Fresh per thread so labels don't bleed across conversations.
+    setCitationMap({});
     const citeIds = saved
       .filter((m) => m.role === "assistant")
       .flatMap((m) => extractCitationIds(m.content));
@@ -226,6 +228,8 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
       setMessages([]);
       persistedIds.current = new Set();
       streamingChatId.current = data.id;
+      setCitationMap({});
+      setDetailWorkout(null);
       setView("thread");
     } else {
       if (error) console.error("Failed to create chat:", error);
@@ -524,10 +528,15 @@ export function ChatPanel({ open, onClose }: ChatPanelProps) {
               <div className="space-y-6">
                 {messages.map((m, idx) => {
                   const isLast = idx === messages.length - 1;
-                  // Validate [[id]] markers against this turn's tool-result ids (live) merged
-                  // with previously-resolved labels — only known ids render as chips.
+                  // Live turns carry tool-result parts: validate [[id]] markers against THIS
+                  // message's own results only, so a later hallucinated id can't borrow
+                  // validity from an id seen earlier in the thread. Reloaded messages (no tool
+                  // parts) fall back to the DB-resolved citationMap.
+                  const own = m.role === "assistant" ? collectCitations(m.parts) : {};
                   const citations =
-                    m.role === "assistant" ? { ...citationMap, ...collectCitations(m.parts) } : undefined;
+                    m.role === "assistant"
+                      ? (Object.keys(own).length > 0 ? own : citationMap)
+                      : undefined;
                   return (
                     <ChatMessage
                       key={m.id}

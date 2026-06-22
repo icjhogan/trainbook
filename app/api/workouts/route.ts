@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { embedWorkout } from "@/lib/embeddings";
+import { embedWorkout, type EmbeddingSource } from "@/lib/embeddings";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Server-side write funnel for workouts (KTD9). All inserts/updates go through here so the
@@ -24,6 +24,11 @@ const WORKOUT_FIELDS = [
 
 type WorkoutPayload = Record<string, unknown>;
 
+// Columns returned to the client — everything except the large `embedding` vector (never
+// shipped over the wire) and computed-after-write fields the client doesn't need.
+const RETURN_COLUMNS =
+  "id, user_id, date, date_iso, workout_type, event_focus, exercises, technical_cues, personal_notes, raw_text, flags, image_path, created_at, updated_at, embedded_at";
+
 function pickWorkoutFields(body: WorkoutPayload): WorkoutPayload {
   const out: WorkoutPayload = {};
   for (const key of WORKOUT_FIELDS) {
@@ -41,10 +46,10 @@ function isValidPayload(body: WorkoutPayload): boolean {
 // Embed the saved row and persist the vector. Best-effort: never throws to the caller.
 async function embedAndStore(
   supabase: SupabaseClient,
-  row: { id: string } & WorkoutPayload,
+  row: { id: string } & EmbeddingSource,
 ): Promise<void> {
   try {
-    const embedding = await embedWorkout(row as never);
+    const embedding = await embedWorkout(row);
     await supabase
       .from("workouts")
       .update({ embedding, embedded_at: new Date().toISOString() })
@@ -75,14 +80,15 @@ export async function POST(req: Request) {
   const { data, error } = await supabase
     .from("workouts")
     .insert({ ...pickWorkoutFields(body), user_id: user.id })
-    .select()
+    .select(RETURN_COLUMNS)
     .single();
 
   if (error || !data) {
-    return new Response(error?.message || "Insert failed", { status: 500 });
+    console.error("[workouts] insert failed:", error);
+    return new Response("Insert failed", { status: 500 });
   }
 
-  await embedAndStore(supabase, data);
+  await embedAndStore(supabase, data as unknown as { id: string } & EmbeddingSource);
   return Response.json({ workout: data });
 }
 
@@ -108,13 +114,14 @@ export async function PATCH(req: Request) {
     .from("workouts")
     .update({ ...pickWorkoutFields(body), updated_at: new Date().toISOString() })
     .eq("id", body.id)
-    .select()
+    .select(RETURN_COLUMNS)
     .single();
 
   if (error || !data) {
-    return new Response(error?.message || "Update failed", { status: 500 });
+    console.error("[workouts] update failed:", error);
+    return new Response("Update failed", { status: 500 });
   }
 
-  await embedAndStore(supabase, data);
+  await embedAndStore(supabase, data as unknown as { id: string } & EmbeddingSource);
   return Response.json({ workout: data });
 }

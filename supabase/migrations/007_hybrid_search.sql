@@ -59,7 +59,8 @@ as $$
   fts as (
     select id, row_number() over (order by ts_rank(doc, plainto_tsquery('english', p_query_text)) desc) as rank
     from searchable
-    where p_query_text is not null and doc @@ plainto_tsquery('english', p_query_text)
+    where p_query_text is not null and p_query_text <> '' and doc @@ plainto_tsquery('english', p_query_text)
+    order by ts_rank(doc, plainto_tsquery('english', p_query_text)) desc
     limit p_match_count * 2
   )
   select

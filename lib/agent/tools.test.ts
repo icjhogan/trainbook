@@ -76,6 +76,20 @@ describe("search_workouts", () => {
     expect(r.total).toBe(0);
     expect(r.workouts).toEqual([]);
   });
+
+  it("clamps a 0 limit up to 1", async () => {
+    const r = await searchWorkouts(fakeReader(corpus), { limit: 0 });
+    expect(r.returned).toBe(1);
+  });
+
+  it("exposes per-exercise notes and workout flags to the agent", async () => {
+    const reader = fakeReader([
+      wk({ id: "n", flags: ["distance uncertain"], exercises: [ex({ description: "hurdles", notes: "left lead leg" })] }),
+    ]);
+    const r = await searchWorkouts(reader, {});
+    expect(r.workouts[0].flags).toEqual(["distance uncertain"]);
+    expect(r.workouts[0].exercises[0].notes).toBe("left lead leg");
+  });
 });
 
 describe("get_workout", () => {
@@ -84,6 +98,12 @@ describe("get_workout", () => {
     expect(r.found).toBe(true);
     if (r.found) expect(r.citations[0].id).toBe("a");
   });
+  it("finds by date_iso", async () => {
+    const r = await getWorkout(fakeReader(corpus), { date_iso: "2026-02-15" });
+    expect(r.found).toBe(true);
+    if (r.found) expect(r.citations[0].id).toBe("b");
+  });
+
   it("reports not found", async () => {
     const r = await getWorkout(fakeReader(corpus), { id: "zzz" });
     expect(r.found).toBe(false);
@@ -99,6 +119,15 @@ describe("compute_metric", () => {
   it("session_count excludes the Weekly Plan entry", async () => {
     const r = (await computeMetricTool(fakeReader(corpus), { metric: "session_count" })) as { count: number };
     expect(r.count).toBe(2);
+  });
+
+  it("dispatches weekly_volume and event_coverage through the tool layer", async () => {
+    const wv = (await computeMetricTool(fakeReader(corpus), { metric: "weekly_volume" })) as { weeks: unknown[] };
+    expect(Array.isArray(wv.weeks)).toBe(true);
+    const ec = (await computeMetricTool(fakeReader(corpus), { metric: "event_coverage" })) as {
+      events: { event: string }[];
+    };
+    expect(ec.events.some((e) => e.event === "Hurdles")).toBe(true);
   });
 });
 

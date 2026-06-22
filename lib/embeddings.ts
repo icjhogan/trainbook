@@ -8,7 +8,7 @@ import type { Workout, ExtractedWorkout } from "./types";
 const EMBEDDING_MODEL = "text-embedding-3-small";
 export const EMBEDDING_DIMENSIONS = 1024;
 
-type EmbeddingSource = Pick<
+export type EmbeddingSource = Pick<
   Workout | ExtractedWorkout,
   "date" | "workout_type" | "event_focus" | "exercises" | "technical_cues" | "personal_notes"
 >;
@@ -40,7 +40,15 @@ export async function embedText(text: string): Promise<number[]> {
     model: openai.textEmbeddingModel(EMBEDDING_MODEL),
     value: text.slice(0, 8000), // generous cap; a workout is ~150 tokens
     providerOptions: { openai: { dimensions: EMBEDDING_DIMENSIONS } },
+    // Bound the call so a hung OpenAI connection can't stall a write-path request or block
+    // the sequential backfill loop until the serverless wall-clock limit.
+    abortSignal: AbortSignal.timeout(15_000),
   });
+  // Guard the column contract: a provider that ignored `dimensions` would return a
+  // wrong-width vector that Postgres rejects on insert — fail loudly here instead.
+  if (embedding.length !== EMBEDDING_DIMENSIONS) {
+    throw new Error(`Embedding dimension mismatch: got ${embedding.length}, expected ${EMBEDDING_DIMENSIONS}`);
+  }
   return embedding;
 }
 

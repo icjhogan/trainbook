@@ -32,6 +32,8 @@ describe("applyCitations", () => {
 
   it("hides an incomplete trailing marker while streaming", () => {
     expect(applyCitations("volume climbed [[a1", map, true)).toBe("volume climbed ");
+    // also hides a one-of-two-bracket partial ("[[a1]") so no half-formed chip flashes
+    expect(applyCitations("volume climbed [[a1]", map, true)).toBe("volume climbed ");
     // but a complete marker still renders mid-stream
     expect(applyCitations("volume [[a1]] climbed [[b", map, true)).toBe("volume [March 1](#cite-a1) climbed ");
   });

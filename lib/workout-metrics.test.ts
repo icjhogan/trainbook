@@ -91,14 +91,38 @@ describe("filterWorkouts", () => {
     const rows = [wk({ event_focus: ["High Jump"] }), wk({ event_focus: ["200m"] })];
     expect(filterWorkouts(rows, { event: "high jump" })).toHaveLength(1);
   });
+
+  it("filters by workout_type", () => {
+    const rows = [wk({ workout_type: "Goals" }), wk({ workout_type: "Practice" })];
+    expect(filterWorkouts(rows, { type: "Goals" })).toHaveLength(1);
+  });
+
+  it("excludes a workout with a malformed date_iso when a range is active", () => {
+    const rows = [wk({ date_iso: "not-a-date", exercises: [ex({ distance: "300m", reps: 1, sets: 1 })] })];
+    expect(totalVolume(rows, { range: { from: "2026-01-01", to: "2026-12-31" } }).meters).toBe(0);
+  });
+});
+
+describe("weeklyVolume", () => {
+  it("sums meters per Monday-anchored week", () => {
+    const w1 = wk({ date_iso: "2026-03-02", exercises: [ex({ distance: "300m", reps: 4, sets: 1 })] }); // wk of Mar 2
+    const w2 = wk({ date_iso: "2026-03-03", exercises: [ex({ distance: "200m", reps: 1, sets: 1 })] }); // same wk
+    const w3 = wk({ date_iso: "2026-03-10", exercises: [ex({ distance: "100m", reps: 1, sets: 1 })] }); // next wk
+    const weeks = weeklyVolume([w1, w2, w3]);
+    expect(weeks).toHaveLength(2);
+    expect(weeks[0].meters).toBe(1400); // 1200 + 200 in the first week
+    expect(weeks[1].meters).toBe(100);
+  });
 });
 
 describe("computeMetric dispatch", () => {
   it("routes volume / weekly_volume / event_coverage / session_count", () => {
     const rows = [wk({ event_focus: ["Hurdles"], exercises: [ex({ distance: "100m", reps: 1, sets: 1 })] })];
     expect(computeMetric("volume", rows)).toMatchObject({ name: "volume", meters: 100 });
-    expect(computeMetric("weekly_volume", rows)).toHaveProperty("weeks");
-    expect(computeMetric("event_coverage", rows)).toHaveProperty("events");
+    const weekly = computeMetric("weekly_volume", rows) as { weeks: { meters: number }[] };
+    expect(weekly.weeks[0].meters).toBe(100);
+    const cov = computeMetric("event_coverage", rows) as { events: { event: string; count: number }[] };
+    expect(cov.events.find((e) => e.event === "Hurdles")?.count).toBe(1);
     expect(computeMetric("session_count", rows)).toMatchObject({ name: "session_count", count: 1 });
   });
 });
