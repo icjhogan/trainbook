@@ -8,6 +8,7 @@ import { Toast } from "@/components/toast";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { ExtractedWorkout } from "@/lib/types";
+import { normalizeEventFocus } from "@/lib/event-focus";
 import { formatDateLabel, isValidDateIso, resolveEntryDateIso } from "@/lib/workout-utils";
 import { emptyExercise } from "@/lib/workout-shorthand";
 
@@ -120,6 +121,7 @@ export default function UploadPage() {
       setToast("Pick a valid date before saving");
       return;
     }
+    const eventFocus = normalizeEventFocus(workout.event_focus);
     setSaving(true);
     try {
       // Server write funnel: persists the row AND embeds it (server-only OpenAI key).
@@ -130,7 +132,7 @@ export default function UploadPage() {
           date: workout.date,
           date_iso: workout.date_iso || null,
           workout_type: workout.workout_type,
-          event_focus: workout.event_focus,
+          event_focus: eventFocus,
           exercises: workout.exercises,
           technical_cues: workout.technical_cues,
           personal_notes: workout.personal_notes,
@@ -145,7 +147,7 @@ export default function UploadPage() {
       carryRef.current = {
         date_iso: workout.date_iso,
         workout_type: workout.workout_type,
-        event_focus: workout.event_focus,
+        event_focus: eventFocus,
       };
 
       if (entryMode === "manual") {

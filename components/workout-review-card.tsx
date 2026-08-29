@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Exercise, ExtractedWorkout } from "@/lib/types";
 import { emptyExercise } from "@/lib/workout-shorthand";
 import { DateField } from "./date-field";
+import { EventFocusInput } from "./event-focus-input";
 
 interface WorkoutReviewCardProps {
   workout: ExtractedWorkout;
@@ -105,11 +106,10 @@ export function WorkoutReviewCard({
         </div>
         <div>
           <label className={labelCls}>events</label>
-          <input
-            value={workout.event_focus.join(", ")}
-            onChange={(e) =>
-              update("event_focus", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))
-            }
+          <EventFocusInput
+            key={`${workout.raw_text}:${workout.date_iso}`}
+            events={workout.event_focus}
+            onChange={(events) => update("event_focus", events)}
             placeholder="200m, Hurdles"
             className="w-full px-3 py-2.5 rounded-[var(--radius-sm)] glass-input text-[15px] outline-none"
           />
