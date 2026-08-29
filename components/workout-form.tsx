@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Exercise, ExtractedWorkout } from "@/lib/types";
 import { DateField } from "./date-field";
+import { EventFocusInput } from "./event-focus-input";
 import { parseWorkoutShorthand } from "@/lib/workout-shorthand";
 
 interface WorkoutFormProps {
@@ -106,14 +107,9 @@ export function WorkoutForm({
         </div>
         <div>
           <label className="text-label mb-1.5 block">events</label>
-          <input
-            value={workout.event_focus.join(", ")}
-            onChange={(e) =>
-              updateField(
-                "event_focus",
-                e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
-              )
-            }
+          <EventFocusInput
+            events={workout.event_focus}
+            onChange={(events) => updateField("event_focus", events)}
             className={inputClass}
           />
         </div>

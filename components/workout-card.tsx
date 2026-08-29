@@ -5,6 +5,7 @@ import type { Workout } from "@/lib/types";
 import { WorkoutPill } from "./workout-pill";
 import { WorkoutForm } from "./workout-form";
 import { useChatContext } from "@/lib/chat-context";
+import { normalizeEventFocus } from "@/lib/event-focus";
 
 interface WorkoutCardProps {
   workout: Workout;
@@ -55,28 +56,32 @@ export function WorkoutCard({ workout, onDelete, onUpdate, onOpenChat, defaultEx
   async function handleSave() {
     setSaving(true);
     setSaveError(false);
+    const normalizedEditData = {
+      ...editData,
+      event_focus: normalizeEventFocus(editData.event_focus),
+    };
     // Server write funnel: persists the edit AND re-embeds it (server-only OpenAI key).
     const res = await fetch("/api/workouts", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         id: workout.id,
-        date: editData.date,
-        date_iso: editData.date_iso || null,
-        workout_type: editData.workout_type,
-        event_focus: editData.event_focus,
-        exercises: editData.exercises,
-        technical_cues: editData.technical_cues,
-        personal_notes: editData.personal_notes,
-        raw_text: editData.raw_text,
-        flags: editData.flags,
+        date: normalizedEditData.date,
+        date_iso: normalizedEditData.date_iso || null,
+        workout_type: normalizedEditData.workout_type,
+        event_focus: normalizedEditData.event_focus,
+        exercises: normalizedEditData.exercises,
+        technical_cues: normalizedEditData.technical_cues,
+        personal_notes: normalizedEditData.personal_notes,
+        raw_text: normalizedEditData.raw_text,
+        flags: normalizedEditData.flags,
       }),
     });
 
     setSaving(false);
 
     if (res.ok) {
-      onUpdate({ ...workout, ...editData });
+      onUpdate({ ...workout, ...normalizedEditData });
       setEditing(false);
     } else {
       // Keep the user in the form with their edits intact and tell them it failed.
