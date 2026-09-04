@@ -7,6 +7,7 @@ import {
   type MetricFilter,
   type MetricCitation,
 } from "@/lib/workout-metrics";
+import { searchWorkouts as searchWorkoutText } from "@/lib/workout-utils";
 
 // Transport-agnostic read/compute tool layer (R8/KTD5). Each tool is a pure async function of
 // (reader, args) -> structured result. NO imports of `ai`, Next, or the Supabase client — the
@@ -61,13 +62,14 @@ function toFilter(args: RangeArgs): MetricFilter {
 
 export async function searchWorkouts(
   reader: ScopedWorkoutReader,
-  args: RangeArgs & { limit?: number },
+  args: RangeArgs & { query?: string; limit?: number },
 ) {
   const rows = await reader.listWorkouts(toFilter(args));
+  const matches = args.query ? searchWorkoutText(rows, args.query) : rows;
   const limit = Math.min(Math.max(args.limit ?? 25, 1), 100);
-  const shown = rows.slice(0, limit);
+  const shown = matches.slice(0, limit);
   return {
-    total: rows.length,
+    total: matches.length,
     returned: shown.length,
     workouts: shown.map(summarize),
     citations: shown.map(cite),
@@ -141,13 +143,20 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     name: "search_workouts",
     description:
-      "Find training sessions by structured filters (date range, event, type), newest first. Use for 'how many', 'list', 'when did I' questions. Returns compact session summaries with ids for citation.",
+      "Find sessions by exact keyword or measurement and/or structured filters, newest first. Always use this for concrete distances, rep schemes, exercise names, times, and 'when did I' questions; use semantic_search for fuzzy memories or meaning. Returns compact session summaries with ids for citation.",
     inputSchema: {
       type: "object",
-      properties: { ...rangeProps, limit: { type: "number", description: "Max sessions to return (default 25)." } },
+      properties: {
+        query: {
+          type: "string",
+          description: "Exact keyword or measurement, e.g. '450', '450m', '4x350', or 'fly 200'. Use a compact search term, not the user's whole question.",
+        },
+        ...rangeProps,
+        limit: { type: "number", description: "Max sessions to return (default 25)." },
+      },
       additionalProperties: false,
     },
-    handler: (reader, args) => searchWorkouts(reader, args as RangeArgs & { limit?: number }),
+    handler: (reader, args) => searchWorkouts(reader, args as RangeArgs & { query?: string; limit?: number }),
   },
   {
     name: "get_workout",
@@ -192,7 +201,7 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     name: "semantic_search",
     description:
-      "Find sessions by meaning across the entire history, not just keywords — use for fuzzy/thematic recall like 'the session where my hamstring flared' or 'when I first felt fast'. Returns the most relevant sessions with ids for citation. Prefer search_workouts when the user gives concrete date/event filters.",
+      "Find sessions by meaning across the entire history, not just keywords — use for fuzzy/thematic recall like 'the session where my hamstring flared' or 'when I first felt fast'. Returns the most relevant sessions with ids for citation. Prefer search_workouts for concrete keywords, measurements, dates, events, or types.",
     inputSchema: {
       type: "object",
       properties: {

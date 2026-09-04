@@ -59,6 +59,16 @@ const corpus = [
   wk({ id: "c", date_iso: "2026-03-20", workout_type: "Weekly Plan", event_focus: ["Hurdles"] }),
 ];
 
+const distanceCorpus = [
+  ...corpus,
+  wk({
+    id: "d",
+    date: "Fri, Jul 31",
+    date_iso: "2026-07-31",
+    exercises: [ex({ distance: "450m", times: ["1:05.53"], notes: "all out" })],
+  }),
+];
+
 describe("search_workouts", () => {
   it("filters by event and returns citations", async () => {
     const r = await searchWorkouts(fakeReader(corpus), { event: "Hurdles" });
@@ -69,6 +79,17 @@ describe("search_workouts", () => {
   it("filters by date range", async () => {
     const r = await searchWorkouts(fakeReader(corpus), { from: "2026-03-01", to: "2026-03-31" });
     expect(r.total).toBe(2);
+  });
+
+  it.each(["450", "450m", "450s"])("finds an exact distance query written as %s", async (query) => {
+    const r = await searchWorkouts(fakeReader(distanceCorpus), { query });
+    expect(r.total).toBe(1);
+    expect(r.workouts[0].id).toBe("d");
+  });
+
+  it("combines an exact query with structured filters", async () => {
+    const r = await searchWorkouts(fakeReader(distanceCorpus), { query: "450", type: "Practice" });
+    expect(r.workouts.map((w) => w.id)).toEqual(["d"]);
   });
 
   it("returns empty (not error) when nothing matches", async () => {
@@ -171,6 +192,8 @@ describe("tool registry", () => {
       expect(typeof t.handler).toBe("function");
       expect(t.inputSchema).toHaveProperty("type", "object");
     }
+    expect(toolDefinitions.find((t) => t.name === "search_workouts")?.inputSchema)
+      .toHaveProperty("properties.query.type", "string");
   });
 });
 
