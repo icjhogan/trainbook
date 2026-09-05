@@ -232,6 +232,25 @@ describe("searchWorkouts", () => {
     workout({ id: "1", date: "Mon, Nov 10", workout_type: "Tempo", raw_text: "easy aerobic" }),
     workout({ id: "2", date: "Tue, Nov 11", workout_type: "Speed", exercises: [exercise({ description: "flying 30s" })] }),
     workout({ id: "3", date: "Wed, Nov 12", workout_type: "Hurdles", personal_notes: "left lead leg", event_focus: ["100mH"], technical_cues: ["snap the trail leg"] }),
+    workout({
+      id: "4",
+      date: "Fri, Jul 31",
+      date_iso: "2026-07-31",
+      exercises: [exercise({
+        description: "long rep",
+        distance: "450m",
+        times: ["1:05.53"],
+        rest: "12 min",
+        notes: "all out",
+      })],
+    }),
+    workout({
+      id: "5",
+      date: "Thu, Jan 1",
+      date_iso: "2026-01-01",
+      workout_type: "Long run",
+      exercises: [exercise({ description: "long run", distance: "1450m" })],
+    }),
   ];
 
   it("returns all workouts for an empty query", () => {
@@ -251,6 +270,19 @@ describe("searchWorkouts", () => {
     expect(searchWorkouts(ws, "flying").map((w) => w.id)).toEqual(["2"]);
   });
 
+  it.each(["450", "450m", "450 meters", "450s"])(
+    "normalizes distance query %s without matching a larger number",
+    (query) => {
+      expect(searchWorkouts(ws, query).map((w) => w.id)).toEqual(["4"]);
+    },
+  );
+
+  it("searches structured exercise details", () => {
+    expect(searchWorkouts(ws, "1:05.53").map((w) => w.id)).toEqual(["4"]);
+    expect(searchWorkouts(ws, "12 min").map((w) => w.id)).toEqual(["4"]);
+    expect(searchWorkouts(ws, "all out").map((w) => w.id)).toEqual(["4"]);
+  });
+
   it("matches inside personal_notes", () => {
     expect(searchWorkouts(ws, "lead").map((w) => w.id)).toEqual(["3"]);
   });
@@ -265,6 +297,7 @@ describe("searchWorkouts", () => {
 
   it("matches inside the date field", () => {
     expect(searchWorkouts(ws, "nov 10").map((w) => w.id)).toEqual(["1"]);
+    expect(searchWorkouts(ws, "2026-07-31").map((w) => w.id)).toEqual(["4"]);
   });
 
   it("returns nothing when no field matches", () => {

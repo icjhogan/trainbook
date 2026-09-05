@@ -88,24 +88,52 @@ export function parseDistanceMeters(distStr: string | null): number {
   }, 0);
 }
 
-// Case-insensitive substring search across the human-readable workout fields.
-// Empty query returns the list unchanged.
+// Normalize common distance shorthand so an athlete can search with the way they naturally
+// talk about reps: "450", "450m", and plural "450s" all target the same distance. Keep the
+// rule to 3-4 digit values so ordinary short times such as "15s" retain their meaning.
+function normalizeWorkoutSearchText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/(\d{3,4})\s*(?:met(?:er|re)s?|m|s)\b/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function workoutSearchText(w: Workout): string {
+  const fields = [
+    w.date,
+    w.date_iso,
+    w.workout_type,
+    ...(w.event_focus || []),
+    w.personal_notes || "",
+    w.raw_text || "",
+    ...(w.technical_cues || []),
+    ...(w.exercises || []).flatMap((e) => [
+      e.description,
+      e.distance || "",
+      e.reps == null ? "" : String(e.reps),
+      e.sets == null ? "" : String(e.sets),
+      ...(e.times || []),
+      e.rest || "",
+      e.notes || "",
+    ]),
+  ];
+  return normalizeWorkoutSearchText(fields.join(" "));
+}
+
+// Case-insensitive substring search across every human-readable workout/exercise field.
+// Empty query returns the list unchanged. Numeric-only distance queries use digit boundaries
+// so "450" cannot accidentally match "1450".
 export function searchWorkouts(workouts: Workout[], query: string): Workout[] {
-  const q = query.toLowerCase().trim();
+  const q = normalizeWorkoutSearchText(query);
   if (!q) return workouts;
 
-  return workouts.filter((w) => {
-    const fields = [
-      w.date,
-      w.workout_type,
-      ...(w.event_focus || []),
-      w.personal_notes || "",
-      w.raw_text || "",
-      ...(w.technical_cues || []),
-      ...(w.exercises || []).map((e) => e.description),
-    ];
-    return fields.some((f) => f.toLowerCase().includes(q));
-  });
+  if (/^\d{3,4}$/.test(q)) {
+    const numericQuery = new RegExp(`(?:^|\\D)${q}(?:\\D|$)`);
+    return workouts.filter((w) => numericQuery.test(workoutSearchText(w)));
+  }
+
+  return workouts.filter((w) => workoutSearchText(w).includes(q));
 }
 
 export function calculateRunningVolume(exercises: Exercise[]): number {
